@@ -1,0 +1,125 @@
+.factura-page { max-width: 860px; margin: 0 auto; }
+
+.print-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.factura-document {
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.factura-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 2rem;
+  gap: 1rem;
+
+  @media (max-width: 600px) { flex-direction: column; }
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  .brand-icon { font-size: 2.5rem; height: 2.5rem; width: 2.5rem; color: var(--color-accent); }
+  .brand-name { font-size: 1.4rem; font-weight: 800; margin: 0; color: var(--color-primary); }
+  .brand-sub  { font-size: 0.75rem; color: var(--color-muted); margin: 0; }
+}
+
+.factura-meta {
+  text-align: right;
+  .factura-title { font-size: 1.5rem; font-weight: 800; letter-spacing: 0.1em; color: var(--color-primary); margin: 0 0 0.25rem; }
+  .factura-id    { font-family: monospace; font-weight: 700; color: var(--color-muted); font-size: 0.9rem; margin: 0 0 0.25rem; }
+  .factura-fecha { font-size: 0.8rem; color: var(--color-muted); margin: 0 0 0.5rem; }
+}
+
+.section {
+  padding: 1.5rem 2rem;
+  .section-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-muted); font-weight: 700; margin: 0 0 1rem; }
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem 1.5rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  .detail-label { font-size: 0.72rem; color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .detail-value { font-weight: 600; font-size: 0.9rem; &.mono { font-family: monospace; } }
+}
+
+.totals-section { padding: 1.5rem 2rem; }
+
+.totals-table {
+  max-width: 360px;
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.totals-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  padding: 0.2rem 0;
+  &.discount-row .discount-text { color: #10b981; font-weight: 600; }
+  &.total-final-row {
+    padding-top: 0.75rem;
+    span:first-child { font-weight: 800; font-size: 1rem; }
+    .total-final { font-size: 1.5rem; font-weight: 900; color: var(--color-accent); }
+  }
+}
+
+.pagos-list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.pago-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+}
+
+.pago-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  mat-icon { color: var(--color-accent); }
+  .pago-tipo { font-weight: 700; font-size: 0.875rem; display: block; }
+  .pago-ref  { font-size: 0.75rem; color: var(--color-muted); display: block; }
+}
+
+.pago-right {
+  text-align: right;
+  .pago-monto { font-weight: 700; font-size: 0.95rem; display: block; }
+  .pago-fecha { font-size: 0.75rem; color: var(--color-muted); display: block; }
+}
+
+.factura-footer {
+  padding: 1.5rem 2rem;
+  background: #f8fafc;
+  border-top: 1px solid var(--color-border);
+  text-align: center;
+  p { margin: 0 0 0.25rem; font-size: 0.875rem; color: var(--color-muted); }
+  .footer-legal { font-size: 0.72rem; }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  .factura-document { box-shadow: none; border: none; }
+}

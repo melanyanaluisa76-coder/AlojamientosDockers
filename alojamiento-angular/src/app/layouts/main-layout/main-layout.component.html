@@ -1,0 +1,75 @@
+<!-- ── Navbar ───────────────────────────────────────────────────────────── -->
+<header class="navbar-wrapper">
+  <mat-toolbar class="navbar-toolbar">
+    <a routerLink="/" class="brand-link">
+      <mat-icon class="brand-icon">hotel</mat-icon>
+      <span class="brand-name">AlojamientoMR</span>
+    </a>
+
+    <span class="spacer"></span>
+
+    <nav class="nav-links">
+      <a mat-button routerLink="/propiedades">
+        <mat-icon>search</mat-icon> Propiedades
+      </a>
+
+      @if (authStore.isAuthenticated()) {
+        <a mat-button routerLink="/mis-reservas">
+          <mat-icon>event_note</mat-icon> Mis Reservas
+        </a>
+
+        @if (authStore.hasAdminAccess()) {
+          <a mat-button routerLink="/admin">
+            <mat-icon>admin_panel_settings</mat-icon> Admin
+          </a>
+        }
+
+        <button mat-button [matMenuTriggerFor]="userMenu" class="user-menu-btn">
+          <mat-icon>account_circle</mat-icon>
+          <span class="user-name">{{ authStore.user()?.nombreCompleto }}</span>
+          <mat-icon>arrow_drop_down</mat-icon>
+        </button>
+        <mat-menu #userMenu="matMenu">
+          <div class="user-menu-header px-4 py-2">
+            <p class="text-sm font-semibold text-primary">{{ authStore.user()?.nombreCompleto }}</p>
+            <p class="text-xs text-muted">{{ authStore.user()?.email }}</p>
+          </div>
+          <mat-divider />
+          <a mat-menu-item routerLink="/mis-reservas">
+            <mat-icon>event_note</mat-icon> Mis Reservas
+          </a>
+          <button mat-menu-item (click)="logout()" class="text-danger">
+            <mat-icon color="warn">logout</mat-icon> Cerrar Sesión
+          </button>
+        </mat-menu>
+      } @else {
+        <a mat-button routerLink="/login">Iniciar Sesión</a>
+        <a mat-flat-button routerLink="/register" class="btn-register">
+          Registrarse
+        </a>
+      }
+    </nav>
+  </mat-toolbar>
+</header>
+
+<!-- ── Contenido de la página ───────────────────────────────────────────── -->
+<main class="main-content">
+  <router-outlet />
+</main>
+
+<!-- ── Footer ───────────────────────────────────────────────────────────── -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <mat-icon>hotel</mat-icon>
+      <span>AlojamientoMR</span>
+    </div>
+    <p class="footer-copy">
+      &copy; {{ currentYear }} AlojamientoMR · Sistema de Reservas de Alojamiento
+    </p>
+    <nav class="footer-links">
+      <a routerLink="/propiedades">Propiedades</a>
+      <a routerLink="/login">Acceso</a>
+    </nav>
+  </div>
+</footer>

@@ -1,0 +1,72 @@
+<mat-sidenav-container class="admin-container">
+
+  <!-- ── Sidenav ────────────────────────────────────────────────────────── -->
+  <mat-sidenav
+    class="admin-sidenav"
+    mode="side"
+    [opened]="sidenavOpen()"
+  >
+    <div class="sidenav-header">
+      <mat-icon class="sidenav-logo">hotel</mat-icon>
+      <div>
+        <p class="sidenav-title">AlojamientoMR</p>
+        <p class="sidenav-subtitle">Panel de Administración</p>
+      </div>
+    </div>
+
+    <mat-divider />
+
+    <mat-nav-list class="sidenav-nav">
+      @for (item of visibleNavItems; track item.route) {
+        <a
+          mat-list-item
+          [routerLink]="item.route"
+          routerLinkActive="nav-active"
+          [routerLinkActiveOptions]="{ exact: item.route === '/admin' }"
+          class="nav-item"
+        >
+          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+          <span matListItemTitle>{{ item.label }}</span>
+        </a>
+      }
+    </mat-nav-list>
+
+    <mat-divider />
+
+    <div class="sidenav-footer">
+      <div class="user-info">
+        <mat-icon>account_circle</mat-icon>
+        <div>
+          <p class="user-name">{{ authStore.user()?.nombreCompleto }}</p>
+          <p class="user-role">
+            @if (authStore.isAdmin()) { Administrador }
+            @else { Colaborador }
+          </p>
+        </div>
+      </div>
+      <button mat-icon-button (click)="logout()" matTooltip="Cerrar sesión" color="warn">
+        <mat-icon>logout</mat-icon>
+      </button>
+    </div>
+  </mat-sidenav>
+
+  <!-- ── Contenido principal ─────────────────────────────────────────────── -->
+  <mat-sidenav-content class="admin-content">
+    <!-- Topbar -->
+    <mat-toolbar class="admin-topbar">
+      <button mat-icon-button (click)="toggleSidenav()">
+        <mat-icon>menu</mat-icon>
+      </button>
+      <span class="topbar-spacer"></span>
+      <a mat-button routerLink="/" target="_blank" class="topbar-link">
+        <mat-icon>open_in_new</mat-icon> Ver Sitio
+      </a>
+    </mat-toolbar>
+
+    <!-- Página -->
+    <div class="admin-page-content">
+      <router-outlet />
+    </div>
+  </mat-sidenav-content>
+
+</mat-sidenav-container>

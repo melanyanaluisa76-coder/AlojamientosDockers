@@ -1,0 +1,113 @@
+<!-- ── Hero Section ──────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-overlay">
+    <div class="hero-content">
+      <h1 class="hero-title">Encuentra tu alojamiento ideal</h1>
+      <p class="hero-subtitle">Reserva hoteles, suites y más con la mejor experiencia y precios garantizados.</p>
+
+      <!-- Search bar -->
+      <div class="search-card">
+        <form [formGroup]="searchForm" (ngSubmit)="search()" class="search-form">
+          <mat-form-field appearance="outline" class="search-field">
+            <mat-label>Destino</mat-label>
+            <mat-icon matPrefix>location_on</mat-icon>
+            <input matInput formControlName="ciudadText" placeholder="¿A dónde vas?" list="ciudades-list" />
+            <datalist id="ciudades-list">
+              @for (c of ciudades(); track c.ciudadId) {
+                <option [value]="c.nombre">{{ c.nombre }}, {{ c.pais }}</option>
+              }
+            </datalist>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="search-field-date">
+            <mat-label>Check-in</mat-label>
+            <mat-icon matPrefix>event</mat-icon>
+            <input matInput type="date" formControlName="checkIn" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="search-field-date">
+            <mat-label>Check-out</mat-label>
+            <mat-icon matPrefix>event</mat-icon>
+            <input matInput type="date" formControlName="checkOut" />
+          </mat-form-field>
+
+          <button mat-flat-button color="primary" type="submit" class="search-btn">
+            <mat-icon>search</mat-icon>
+            Buscar
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Propiedades Destacadas ─────────────────────────────────────────────── -->
+<section class="featured-section page-container">
+  <h2 class="section-title">Propiedades Destacadas</h2>
+
+  @if (loadingDest()) {
+    <div class="prop-grid">
+      @for (s of [1,2,3,4,5,6]; track s) {
+        <div class="skeleton" style="height: 260px; border-radius: var(--radius);"></div>
+      }
+    </div>
+  } @else if (destacadas().length === 0) {
+    <div class="empty-state">
+      <mat-icon style="font-size: 3rem; height: 3rem; width: 3rem;">hotel</mat-icon>
+      <h3>No hay propiedades disponibles</h3>
+      <p>El catálogo se actualizará próximamente.</p>
+    </div>
+  } @else {
+    <div class="prop-grid">
+      @for (p of destacadas(); track p.propiedadId) {
+        <a [routerLink]="['/propiedades', p.propiedadId]" class="prop-card">
+          <div class="prop-image">
+            <mat-icon class="prop-placeholder-icon">apartment</mat-icon>
+            <span class="prop-city">{{ p.ciudad }}</span>
+            @if (p.admiteMascotas) {
+              <span class="pet-badge">Pet-Friendly</span>
+            }
+          </div>
+          <div class="prop-body">
+            <h3 class="prop-name">{{ p.nombre }}</h3>
+            <p class="prop-location">
+              <mat-icon>place</mat-icon> {{ p.ciudad }}
+            </p>
+            <div class="prop-footer">
+              <div class="stars">
+                @for (i of stars(5); track i) {
+                  <mat-icon [class.star-filled]="i < p.estrellas">star</mat-icon>
+                }
+              </div>
+              <span class="btn-ver">Ver Detalle →</span>
+            </div>
+          </div>
+        </a>
+      }
+    </div>
+
+    <div class="text-center mt-10">
+      <a mat-stroked-button routerLink="/propiedades">
+        Ver todas las propiedades <mat-icon>arrow_forward</mat-icon>
+      </a>
+    </div>
+  }
+</section>
+
+<!-- ── Features ──────────────────────────────────────────────────────────── -->
+<section class="features-section">
+  <div class="page-container">
+    <h2 class="section-title text-center">¿Por qué AlojamientoMR?</h2>
+    <div class="features-grid">
+      @for (feat of features; track feat.icon) {
+        <div class="feature-card">
+          <div class="feat-icon-wrap">
+            <mat-icon>{{ feat.icon }}</mat-icon>
+          </div>
+          <h3>{{ feat.title }}</h3>
+          <p>{{ feat.desc }}</p>
+        </div>
+      }
+    </div>
+  </div>
+</section>

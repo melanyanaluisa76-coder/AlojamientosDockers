@@ -1,0 +1,15 @@
+# Render Blueprint — AlojamientoMR Frontend
+# Despliega el frontend Angular como un Web Service Docker en Render.
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: alojamiento-angular
+    runtime: docker
+    dockerfilePath: ./alojamiento-angular/Dockerfile
+    dockerContext: ./alojamiento-angular
+    plan: free
+    branch: main
+    autoDeploy: true
+    envVars: []
+    healthCheckPath: /

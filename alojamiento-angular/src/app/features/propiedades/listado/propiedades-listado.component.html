@@ -1,0 +1,104 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="section-title">Propiedades Disponibles</h1>
+      <p class="text-sm text-muted">{{ totalItems() }} propiedades encontradas</p>
+    </div>
+  </div>
+
+  <!-- ── Filtros ──────────────────────────────────────────────────────────── -->
+  <form [formGroup]="filterForm" (ngSubmit)="buscar()" class="filter-bar">
+    <mat-form-field appearance="outline" class="filter-field flex-2">
+      <mat-label>Buscar por nombre</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput formControlName="nombre" placeholder="Nombre de la propiedad..." />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>Ciudad</mat-label>
+      <mat-select formControlName="CiudadId">
+        <mat-option [value]="null">Cualquier ciudad</mat-option>
+        @for (c of ciudades(); track c.ciudadId) {
+          <mat-option [value]="c.ciudadId">{{ c.nombre }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>Estrellas mínimas</mat-label>
+      <mat-select formControlName="EstrellasMinimas">
+        <mat-option [value]="null">Cualquiera</mat-option>
+        <mat-option [value]="3">3+ Estrellas</mat-option>
+        <mat-option [value]="4">4+ Estrellas</mat-option>
+        <mat-option [value]="5">5 Estrellas</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field-sm">
+      <mat-label>Check-in</mat-label>
+      <input matInput type="date" formControlName="FechaCheckIn" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field-sm">
+      <mat-label>Check-out</mat-label>
+      <input matInput type="date" formControlName="FechaCheckOut" />
+    </mat-form-field>
+
+    <div class="filter-actions">
+      <mat-checkbox formControlName="AdmiteMascotas" color="primary">
+        Pet Friendly
+      </mat-checkbox>
+      <button mat-flat-button color="primary" type="submit">
+        <mat-icon>search</mat-icon> Buscar
+      </button>
+      <button mat-stroked-button type="button" (click)="limpiarFiltros()">
+        Limpiar
+      </button>
+    </div>
+  </form>
+
+  <!-- ── Resultados ────────────────────────────────────────────────────────── -->
+  @if (loading()) {
+    <app-loading-spinner message="Buscando propiedades..." />
+  } @else if (filtered().length === 0) {
+    <div class="empty-state">
+      <mat-icon style="font-size: 3rem; height: 3rem; width: 3rem;">search_off</mat-icon>
+      <h3>No se encontraron propiedades</h3>
+      <p>Intenta cambiar los filtros de búsqueda.</p>
+      <button mat-stroked-button (click)="limpiarFiltros()">Limpiar filtros</button>
+    </div>
+  } @else {
+    <div class="prop-grid">
+      @for (p of filtered(); track p.propiedadId) {
+        <a [routerLink]="['/propiedades', p.propiedadId]" class="prop-card">
+          <div class="prop-img">
+            <mat-icon class="prop-icon">apartment</mat-icon>
+            <span class="prop-city-label">{{ p.ciudad }}</span>
+            @if (p.admiteMascotas) {
+              <span class="pet-chip">Pet-Friendly</span>
+            }
+          </div>
+          <div class="prop-body">
+            <h3 class="prop-name">{{ p.nombre }}</h3>
+            <p class="prop-loc">
+              <mat-icon>place</mat-icon>{{ p.ciudad || 'N/D' }}
+            </p>
+            <div class="prop-meta">
+              <div class="stars">
+                @for (i of stars(5); track i) {
+                  <mat-icon [class.filled]="i < p.estrellas">star</mat-icon>
+                }
+              </div>
+              @if (p.calificacionPromedio) {
+                <span class="rating">★ {{ p.calificacionPromedio | number:'1.1-1' }}</span>
+              }
+            </div>
+            <div class="prop-cta">
+              <span class="ver-btn">Ver Detalle →</span>
+            </div>
+          </div>
+        </a>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,108 @@
+<div class="admin-page">
+  <div class="page-header">
+    <h1 class="section-title">Gestión de Colaboradores</h1>
+    <button mat-flat-button color="primary" (click)="showForm.set(!showForm())">
+      <mat-icon>{{ showForm() ? 'close' : 'add' }}</mat-icon>
+      {{ showForm() ? 'Cancelar' : 'Nuevo Colaborador' }}
+    </button>
+  </div>
+
+  <!-- Formulario nuevo colaborador -->
+  @if (showForm()) {
+    <div class="form-card">
+      <h2 class="form-card-title">Nuevo Colaborador</h2>
+      <form [formGroup]="colabForm" (ngSubmit)="guardar()" class="colab-form">
+
+        <mat-form-field appearance="outline">
+          <mat-label>Usuario</mat-label>
+          <mat-icon matPrefix>person</mat-icon>
+          <mat-select formControlName="usuarioId">
+            @for (u of usuariosDisponibles(); track u.usuarioId) {
+              <mat-option [value]="u.usuarioId">{{ u.nombreCompleto }} ({{ u.email }})</mat-option>
+            }
+          </mat-select>
+          @if (usuariosDisponibles().length === 0) {
+            <mat-hint>No hay usuarios disponibles sin colaborador asignado.</mat-hint>
+          }
+          @if (colabForm.get('usuarioId')?.hasError('required') && colabForm.get('usuarioId')?.touched) {
+            <mat-error>Selecciona un usuario.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre de empresa</mat-label>
+          <mat-icon matPrefix>business</mat-icon>
+          <input matInput formControlName="nombreEmpresa" placeholder="Hoteles Ejemplo S.A." />
+          @if (colabForm.get('nombreEmpresa')?.hasError('required') && colabForm.get('nombreEmpresa')?.touched) {
+            <mat-error>El nombre de empresa es obligatorio.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Teléfono</mat-label>
+          <mat-icon matPrefix>phone</mat-icon>
+          <input matInput formControlName="telefono" placeholder="+593 99 123 4567" />
+          @if (colabForm.get('telefono')?.hasError('pattern') && colabForm.get('telefono')?.touched) {
+            <mat-error>Formato de teléfono inválido.</mat-error>
+          }
+        </mat-form-field>
+
+        <div class="form-actions">
+          <button mat-stroked-button type="button" (click)="showForm.set(false)">Cancelar</button>
+          <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
+            {{ submitting() ? 'Guardando...' : 'Crear Colaborador' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+  @if (loading()) {
+    <app-loading-spinner message="Cargando colaboradores..." />
+  } @else if (colaboradores().length === 0) {
+    <div class="empty-state">
+      <mat-icon style="font-size:3rem;height:3rem;width:3rem">business</mat-icon>
+      <h3>No hay colaboradores registrados</h3>
+      <button mat-flat-button color="primary" (click)="showForm.set(true)">Agregar colaborador</button>
+    </div>
+  } @else {
+    <div class="table-card">
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nombre / Empresa</th>
+              <th>Email</th>
+              <th>Teléfono</th>
+              <th>Propiedades</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of colaboradores(); track c.colaboradorId) {
+              <tr>
+                <td>
+                  <div class="colab-name">{{ c.nombreCompleto ?? '—' }}</div>
+                  @if (c.nombreEmpresa) {
+                    <div class="colab-empresa">{{ c.nombreEmpresa }}</div>
+                  }
+                </td>
+                <td class="text-muted">{{ c.email ?? '—' }}</td>
+                <td>{{ c.telefono ?? '—' }}</td>
+                <td>
+                  <span class="badge badge-primary">{{ c.totalPropiedades ?? 0 }}</span>
+                </td>
+                <td>
+                  <button mat-icon-button color="warn" (click)="eliminar(c)" matTooltip="Eliminar">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="table-footer">{{ colaboradores().length }} colaborador(es)</div>
+    </div>
+  }
+</div>

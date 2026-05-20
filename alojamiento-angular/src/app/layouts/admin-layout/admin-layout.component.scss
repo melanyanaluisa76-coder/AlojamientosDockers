@@ -1,0 +1,91 @@
+.admin-container {
+  height: 100vh;
+  display: flex;
+}
+
+.admin-sidenav {
+  width: 256px;
+  background: var(--color-primary) !important;
+  color: white;
+  border-right: none !important;
+}
+
+.sidenav-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1rem;
+
+  .sidenav-logo { font-size: 2rem; color: var(--color-accent); }
+  .sidenav-title { margin: 0; font-size: 0.95rem; font-weight: 700; color: white; }
+  .sidenav-subtitle { margin: 0; font-size: 0.7rem; color: rgba(255,255,255,.5); }
+}
+
+.sidenav-nav {
+  padding: 0.5rem 0 !important;
+
+  .nav-item {
+    color: rgba(255,255,255,.75) !important;
+    border-radius: 8px;
+    margin: 2px 8px;
+    transition: background 0.15s;
+
+    mat-icon { color: rgba(255,255,255,.5) !important; }
+
+    &.nav-active {
+      background: rgba(37,99,235,.4) !important;
+      color: white !important;
+      mat-icon { color: white !important; }
+    }
+
+    &:hover:not(.nav-active) {
+      background: rgba(255,255,255,.08) !important;
+      color: white !important;
+    }
+  }
+}
+
+.sidenav-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(0,0,0,.2);
+
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    overflow: hidden;
+    mat-icon { font-size: 1.75rem; color: rgba(255,255,255,.6); flex-shrink: 0; }
+    .user-name { margin: 0; font-size: 0.8rem; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-role { margin: 0; font-size: 0.7rem; color: rgba(255,255,255,.5); }
+  }
+}
+
+.admin-content { display: flex; flex-direction: column; overflow: auto; }
+
+.admin-topbar {
+  background: white !important;
+  border-bottom: 1px solid var(--color-border);
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+
+  .topbar-spacer { flex: 1; }
+  .topbar-link { color: var(--color-muted); font-size: 0.85rem; }
+}
+
+.admin-page-content {
+  flex: 1;
+  padding: 2rem;
+  background: var(--color-bg);
+  min-height: calc(100vh - 56px);
+}

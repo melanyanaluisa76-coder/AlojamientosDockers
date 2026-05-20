@@ -1,0 +1,91 @@
+.navbar-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 3px rgba(0,0,0,.12);
+}
+
+.navbar-toolbar {
+  background: var(--color-primary) !important;
+  color: white !important;
+  height: 64px;
+  padding: 0 1.5rem;
+  gap: 0.5rem;
+}
+
+.brand-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 700;
+
+  .brand-icon { font-size: 1.5rem; }
+}
+
+.spacer { flex: 1; }
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+
+  a, button { color: rgba(255,255,255,.9) !important; }
+
+  .btn-register {
+    background: var(--color-accent) !important;
+    color: white !important;
+    border-radius: 8px;
+    margin-left: 0.5rem;
+  }
+}
+
+.user-name {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.main-content { min-height: calc(100vh - 64px - 80px); }
+
+.site-footer {
+  background: var(--color-primary);
+  color: rgba(255,255,255,.7);
+  padding: 1.5rem;
+}
+
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: white;
+  font-weight: 700;
+}
+
+.footer-copy { font-size: 0.8rem; margin: 0; }
+
+.footer-links {
+  display: flex;
+  gap: 1.25rem;
+  a {
+    color: rgba(255,255,255,.7);
+    text-decoration: none;
+    font-size: 0.85rem;
+    &:hover { color: white; }
+  }
+}
+
+// Expose currentYear from TS

@@ -1,0 +1,236 @@
+<div class="page-container">
+
+  @if (loading()) {
+    <app-loading-spinner message="Cargando propiedad..." />
+  } @else if (!propiedad()) {
+    <div class="empty-state">
+      <mat-icon style="font-size:3rem;height:3rem;width:3rem">search_off</mat-icon>
+      <h3>Propiedad no encontrada</h3>
+      <a mat-stroked-button routerLink="/propiedades">Ver todas las propiedades</a>
+    </div>
+  } @else {
+
+    <!-- ── Encabezado ──────────────────────────────────────────────────── -->
+    <div class="prop-banner">
+      <div class="banner-overlay">
+        <mat-icon class="banner-icon">apartment</mat-icon>
+        <span class="banner-city">{{ propiedad()!.ciudad }}</span>
+      </div>
+      @if (propiedad()!.admiteMascotas) {
+        <span class="pet-chip">Pet-Friendly</span>
+      }
+    </div>
+
+    <div class="detail-grid">
+
+      <!-- ── Columna izquierda ─────────────────────────────────────────── -->
+      <div class="detail-left">
+        <div class="prop-info-card">
+          <h1 class="prop-title">{{ propiedad()!.nombre }}</h1>
+          <div class="stars-row">
+            @for (i of stars(5); track i) {
+              <mat-icon [class.star-filled]="i < propiedad()!.estrellas" class="star-icon">star</mat-icon>
+            }
+            @if (propiedad()!.calificacionPromedio) {
+              <span class="rating-badge">★ {{ propiedad()!.calificacionPromedio | number:'1.1-1' }}</span>
+            }
+          </div>
+
+          @if (propiedad()!.ciudad) {
+            <p class="prop-location">
+              <mat-icon>place</mat-icon>
+              {{ propiedad()!.ciudad }}@if (propiedad()!.pais) {, {{ propiedad()!.pais }}}
+            </p>
+          }
+
+          @if (propiedad()!.descripcion) {
+            <mat-divider class="my-4" />
+            <p class="prop-desc">{{ propiedad()!.descripcion }}</p>
+          }
+
+          @if (propiedad()!.tipoAlojamiento) {
+            <div class="prop-tag">
+              <mat-icon>category</mat-icon> {{ propiedad()!.tipoAlojamiento }}
+            </div>
+          }
+        </div>
+
+        <!-- ── Habitaciones ─────────────────────────────────────────────── -->
+        <h2 class="section-subtitle">Habitaciones Disponibles</h2>
+
+        @if (habitaciones().length === 0) {
+          <p class="text-muted text-sm">No hay habitaciones disponibles en este momento.</p>
+        }
+
+        <div class="rooms-list">
+          @for (h of habitaciones(); track h.habitacionId) {
+            @if (h.estado) {
+              <div
+                class="room-card"
+                [class.room-selected]="selectedRooms().has(h.habitacionId)"
+                (click)="toggleRoom(h.habitacionId)"
+                role="button"
+                [attr.aria-pressed]="selectedRooms().has(h.habitacionId)"
+              >
+                <div class="room-card-top">
+                  <div>
+                    <h3 class="room-name">{{ h.nombre }}</h3>
+                    @if (h.descripcion) {
+                      <p class="room-desc">{{ h.descripcion }}</p>
+                    }
+                  </div>
+                  @if (h.precioPorNoche) {
+                    <div class="room-price">
+                      <span class="price-amount">{{ h.precioPorNoche | currency:'USD':'symbol':'1.0-0' }}</span>
+                      <span class="price-label">/ noche</span>
+                    </div>
+                  }
+                </div>
+
+                <div class="room-amenities">
+                  <span class="amenity">
+                    <mat-icon>person</mat-icon>{{ h.capacidadAdultos }} adultos
+                  </span>
+                  @if (h.capacidadNinos > 0) {
+                    <span class="amenity">
+                      <mat-icon>child_care</mat-icon>{{ h.capacidadNinos }} niños
+                    </span>
+                  }
+                  <span class="amenity">
+                    <mat-icon>bed</mat-icon>{{ h.numDormitorios }} dorm.
+                  </span>
+                  <span class="amenity">
+                    <mat-icon>bathroom</mat-icon>{{ h.numBanos }} baño(s)
+                  </span>
+                  @if (h.superficieM2) {
+                    <span class="amenity">
+                      <mat-icon>straighten</mat-icon>{{ h.superficieM2 }} m²
+                    </span>
+                  }
+                  @if (h.tieneCocina) {
+                    <span class="amenity">
+                      <mat-icon>kitchen</mat-icon>Cocina
+                    </span>
+                  }
+                  @if (h.tieneAireAcondicionado) {
+                    <span class="amenity">
+                      <mat-icon>ac_unit</mat-icon>A/C
+                    </span>
+                  }
+                  @if (h.admiteMascotas) {
+                    <span class="amenity amenity-pet">
+                      <mat-icon>pets</mat-icon>Pet-Friendly
+                    </span>
+                  }
+                </div>
+
+                <div class="room-select-indicator">
+                  @if (selectedRooms().has(h.habitacionId)) {
+                    <mat-icon class="check-icon">check_circle</mat-icon>
+                    <span>Seleccionada</span>
+                  } @else {
+                    <span class="select-hint">Clic para seleccionar</span>
+                  }
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </div>
+
+      <!-- ── Columna derecha: panel de reserva ─────────────────────────── -->
+      <aside class="booking-panel">
+        <div class="booking-card">
+          <h2 class="booking-title">
+            <mat-icon>event_available</mat-icon> Hacer Reserva
+          </h2>
+
+          <form [formGroup]="bookingForm" (ngSubmit)="reservar()" class="booking-form">
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Check-in</mat-label>
+              <mat-icon matPrefix>event</mat-icon>
+              <input matInput type="date" formControlName="fechaCheckIn" [min]="today" />
+              @if (bookingForm.get('fechaCheckIn')?.hasError('required') && bookingForm.get('fechaCheckIn')?.touched) {
+                <mat-error>La fecha de entrada es obligatoria.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Check-out</mat-label>
+              <mat-icon matPrefix>event</mat-icon>
+              <input matInput type="date" formControlName="fechaCheckOut" [min]="bookingForm.get('fechaCheckIn')?.value || today" />
+              @if (bookingForm.get('fechaCheckOut')?.hasError('required') && bookingForm.get('fechaCheckOut')?.touched) {
+                <mat-error>La fecha de salida es obligatoria.</mat-error>
+              }
+            </mat-form-field>
+
+            <div class="guests-row">
+              <mat-form-field appearance="outline" class="half-width">
+                <mat-label>Adultos</mat-label>
+                <mat-icon matPrefix>person</mat-icon>
+                <input matInput type="number" formControlName="numAdultos" min="1" max="20" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="half-width">
+                <mat-label>Niños</mat-label>
+                <mat-icon matPrefix>child_care</mat-icon>
+                <input matInput type="number" formControlName="numNinos" min="0" max="20" />
+              </mat-form-field>
+            </div>
+
+            @if (propiedad()!.admiteMascotas) {
+              <mat-checkbox formControlName="llevaMascotas" color="primary" class="pets-check">
+                Llevaré mascotas
+              </mat-checkbox>
+            }
+
+            <!-- Resumen -->
+            @if (nightCount() > 0 && selectedRooms().size > 0) {
+              <mat-divider class="my-3" />
+              <div class="booking-summary">
+                <div class="summary-row">
+                  <span>Noches</span><strong>{{ nightCount() }}</strong>
+                </div>
+                <div class="summary-row">
+                  <span>Habitaciones</span><strong>{{ selectedRooms().size }}</strong>
+                </div>
+                <mat-divider class="my-2" />
+                <div class="summary-row total-row">
+                  <span>Total estimado</span>
+                  <strong class="total-amount">{{ subtotal() | currency:'USD':'symbol':'1.2-2' }}</strong>
+                </div>
+              </div>
+            }
+
+            @if (nightCount() === 0 && bookingForm.get('fechaCheckIn')?.value && bookingForm.get('fechaCheckOut')?.value) {
+              <p class="date-warning">
+                <mat-icon>warning</mat-icon> Las fechas seleccionadas no son válidas.
+              </p>
+            }
+
+            @if (selectedRooms().size === 0) {
+              <p class="select-hint-msg">Selecciona habitaciones en la lista de la izquierda.</p>
+            }
+
+            <button
+              mat-flat-button
+              color="primary"
+              type="submit"
+              class="reserve-btn"
+              [disabled]="submitting()"
+            >
+              @if (submitting()) {
+                Procesando...
+              } @else if (!authStore.isAuthenticated()) {
+                <mat-icon>login</mat-icon> Inicia sesión para reservar
+              } @else {
+                <mat-icon>check_circle</mat-icon> Confirmar Reserva
+              }
+            </button>
+          </form>
+        </div>
+      </aside>
+
+    </div>
+  }
+</div>

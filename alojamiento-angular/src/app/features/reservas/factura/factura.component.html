@@ -1,0 +1,152 @@
+<div class="page-container factura-page">
+
+  @if (loading()) {
+    <app-loading-spinner message="Cargando factura..." />
+  } @else if (!reserva()) {
+    <div class="empty-state">
+      <mat-icon style="font-size:3rem;height:3rem;width:3rem">error_outline</mat-icon>
+      <h3>Factura no encontrada</h3>
+      <a mat-stroked-button routerLink="/mis-reservas">Ver mis reservas</a>
+    </div>
+  } @else {
+
+    <!-- Print actions (oculto en impresión) -->
+    <div class="print-actions no-print">
+      <a mat-stroked-button routerLink="/mis-reservas">
+        <mat-icon>arrow_back</mat-icon> Mis Reservas
+      </a>
+      <button mat-flat-button color="primary" (click)="imprimir()">
+        <mat-icon>print</mat-icon> Imprimir Factura
+      </button>
+    </div>
+
+    <div class="factura-document">
+
+      <!-- Encabezado factura -->
+      <div class="factura-header">
+        <div class="brand">
+          <mat-icon class="brand-icon">apartment</mat-icon>
+          <div>
+            <h1 class="brand-name">AlojamientoMR</h1>
+            <p class="brand-sub">Sistema de Gestión Hotelera</p>
+          </div>
+        </div>
+        <div class="factura-meta">
+          <h2 class="factura-title">FACTURA</h2>
+          @if (factura()) {
+            <p class="factura-id">#{{ factura()!.facturaId }}</p>
+            <p class="factura-fecha">{{ factura()!.fechaEmision | date:'dd/MM/yyyy HH:mm' }}</p>
+            <span class="badge" [class]="factura()!.estado === 'Pagada' ? 'badge-success' : 'badge-warning'">
+              {{ factura()!.estado }}
+            </span>
+          }
+        </div>
+      </div>
+
+      <mat-divider />
+
+      <!-- Detalle reserva -->
+      <div class="section">
+        <h3 class="section-label">Detalle de la Reserva</h3>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="detail-label">Código de reserva</span>
+            <span class="detail-value mono">{{ reserva()!.codigoReserva }}</span>
+          </div>
+          @if (reserva()!.nombrePropiedad) {
+            <div class="detail-item">
+              <span class="detail-label">Propiedad</span>
+              <span class="detail-value">{{ reserva()!.nombrePropiedad }}</span>
+            </div>
+          }
+          <div class="detail-item">
+            <span class="detail-label">Check-in</span>
+            <span class="detail-value">{{ reserva()!.fechaCheckIn | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Check-out</span>
+            <span class="detail-value">{{ reserva()!.fechaCheckOut | date:'dd/MM/yyyy' }}</span>
+          </div>
+          @if (reserva()!.nochesTotal) {
+            <div class="detail-item">
+              <span class="detail-label">Noches</span>
+              <span class="detail-value">{{ reserva()!.nochesTotal }}</span>
+            </div>
+          }
+          <div class="detail-item">
+            <span class="detail-label">Huéspedes</span>
+            <span class="detail-value">
+              {{ reserva()!.numAdultos }} adulto(s)@if ((reserva()!.numNinos ?? 0) > 0) {, {{ reserva()!.numNinos }} niño(s)}
+            </span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Habitaciones</span>
+            <span class="detail-value">{{ reserva()!.numHabitaciones }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Estado reserva</span>
+            <span class="detail-value">{{ reserva()!.estado }}</span>
+          </div>
+        </div>
+      </div>
+
+      <mat-divider />
+
+      <!-- Totales -->
+      <div class="totals-section">
+        <div class="totals-table">
+          <div class="totals-row">
+            <span>Subtotal</span>
+            <span>{{ reserva()!.subTotal | currency:'USD':'symbol':'1.2-2' }}</span>
+          </div>
+          @if (reserva()!.descuento && (reserva()!.descuento ?? 0) > 0) {
+            <div class="totals-row discount-row">
+              <span>Descuento</span>
+              <span class="discount-text">- {{ reserva()!.descuento }}%</span>
+            </div>
+          }
+          <mat-divider />
+          <div class="totals-row total-final-row">
+            <span>TOTAL</span>
+            <span class="total-final">{{ reserva()!.total | currency:'USD':'symbol':'1.2-2' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pagos registrados -->
+      @if (pagos().length > 0) {
+        <mat-divider />
+        <div class="section">
+          <h3 class="section-label">Pagos Registrados</h3>
+          <div class="pagos-list">
+            @for (p of pagos(); track p.pagoId) {
+              <div class="pago-row">
+                <div class="pago-info">
+                  <mat-icon>payment</mat-icon>
+                  <div>
+                    <span class="pago-tipo">{{ p.tipoPago }}</span>
+                    @if (p.referenciaPago) {
+                      <span class="pago-ref">Ref: {{ p.referenciaPago }}</span>
+                    }
+                    @if (p.referenciaExterna) {
+                      <span class="pago-ref">Ext: {{ p.referenciaExterna }}</span>
+                    }
+                  </div>
+                </div>
+                <div class="pago-right">
+                  <span class="pago-monto">{{ p.monto | currency:'USD':'symbol':'1.2-2' }}</span>
+                  <span class="pago-fecha">{{ p.fechaPago | date:'dd/MM/yyyy HH:mm' }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="factura-footer">
+        <p>Gracias por elegir AlojamientoMR. Que disfrute su estadía.</p>
+        <p class="footer-legal">Este documento es un comprobante de pago generado por el sistema AlojamientoMR.</p>
+      </div>
+    </div>
+  }
+</div>

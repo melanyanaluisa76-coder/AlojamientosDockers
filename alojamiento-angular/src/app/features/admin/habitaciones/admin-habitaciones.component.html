@@ -1,0 +1,162 @@
+<div class="admin-page">
+  <div class="page-header">
+    <h1 class="section-title">Gestión de Habitaciones</h1>
+    @if (selectedProp()) {
+      <button mat-flat-button color="primary" (click)="showForm.set(!showForm())">
+        <mat-icon>{{ showForm() ? 'close' : 'add' }}</mat-icon>
+        {{ showForm() ? 'Cancelar' : 'Nueva Habitación' }}
+      </button>
+    }
+  </div>
+
+  <!-- Selector de propiedad -->
+  <div class="prop-selector-card">
+    <mat-form-field appearance="outline" class="prop-select-field">
+      <mat-label>Selecciona una propiedad</mat-label>
+      <mat-icon matPrefix>apartment</mat-icon>
+      <mat-select [value]="selectedProp()" (selectionChange)="seleccionarPropiedad($event.value)">
+        @for (p of propiedades(); track p.propiedadId) {
+          <mat-option [value]="p.propiedadId">{{ p.nombre }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <!-- Formulario nueva habitación -->
+  @if (showForm() && selectedProp()) {
+    <div class="form-card">
+      <h2 class="form-card-title">Nueva Habitación</h2>
+      <form [formGroup]="habForm" (ngSubmit)="guardar()" class="hab-form">
+
+        <mat-form-field appearance="outline" class="span-2">
+          <mat-label>Nombre</mat-label>
+          <input matInput formControlName="nombre" placeholder="Suite Premium" />
+          @if (habForm.get('nombre')?.hasError('required') && habForm.get('nombre')?.touched) {
+            <mat-error>El nombre es obligatorio.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="span-2">
+          <mat-label>Descripción</mat-label>
+          <textarea matInput formControlName="descripcion" rows="2"></textarea>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Capacidad adultos</mat-label>
+          <mat-icon matPrefix>person</mat-icon>
+          <input matInput type="number" formControlName="capacidadAdultos" min="1" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Capacidad niños</mat-label>
+          <mat-icon matPrefix>child_care</mat-icon>
+          <input matInput type="number" formControlName="capacidadNinos" min="0" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Nº Dormitorios</mat-label>
+          <mat-icon matPrefix>bed</mat-icon>
+          <input matInput type="number" formControlName="numDormitorios" min="1" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Nº Baños</mat-label>
+          <mat-icon matPrefix>bathroom</mat-icon>
+          <input matInput type="number" formControlName="numBanos" min="1" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Superficie (m²)</mat-label>
+          <input matInput type="number" formControlName="superficieM2" min="1" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Precio por noche (USD)</mat-label>
+          <mat-icon matPrefix>attach_money</mat-icon>
+          <input matInput type="number" formControlName="precioPorNoche" min="1" />
+          @if (habForm.get('precioPorNoche')?.hasError('required') && habForm.get('precioPorNoche')?.touched) {
+            <mat-error>El precio es obligatorio.</mat-error>
+          }
+        </mat-form-field>
+
+        <div class="checks-row span-2">
+          <mat-checkbox formControlName="admiteMascotas" color="primary">Admite mascotas</mat-checkbox>
+          <mat-checkbox formControlName="tieneCocina" color="primary">Cocina</mat-checkbox>
+          <mat-checkbox formControlName="tieneAireAcondicionado" color="primary">Aire acondicionado</mat-checkbox>
+        </div>
+
+        <div class="form-actions span-2">
+          <button mat-stroked-button type="button" (click)="showForm.set(false)">Cancelar</button>
+          <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
+            {{ submitting() ? 'Guardando...' : 'Crear Habitación' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+  @if (!selectedProp()) {
+    <div class="empty-state">
+      <mat-icon style="font-size:3rem;height:3rem;width:3rem">apartment</mat-icon>
+      <h3>Selecciona una propiedad para ver sus habitaciones</h3>
+    </div>
+  } @else if (loading()) {
+    <app-loading-spinner message="Cargando habitaciones..." />
+  } @else if (habitaciones().length === 0) {
+    <div class="empty-state">
+      <mat-icon style="font-size:3rem;height:3rem;width:3rem">king_bed</mat-icon>
+      <h3>No hay habitaciones en esta propiedad</h3>
+      <button mat-flat-button color="primary" (click)="showForm.set(true)">Agregar habitación</button>
+    </div>
+  } @else {
+    <div class="table-card">
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Capacidad</th>
+              <th>Dorm / Baños</th>
+              <th>Superficie</th>
+              <th>Precio / noche</th>
+              <th>Extras</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (h of habitaciones(); track h.habitacionId) {
+              <tr>
+                <td class="font-semibold">{{ h.nombre }}</td>
+                <td>{{ h.capacidadAdultos }}A / {{ h.capacidadNinos }}N</td>
+                <td>{{ h.numDormitorios }} / {{ h.numBanos }}</td>
+                <td>{{ h.superficieM2 ? h.superficieM2 + ' m²' : '—' }}</td>
+                <td class="font-semibold text-accent">
+                  {{ h.precioPorNoche ? (h.precioPorNoche | currency:'USD':'symbol':'1.0-0') : '—' }}
+                </td>
+                <td>
+                  <div class="extras-row">
+                    @if (h.admiteMascotas)         { <span class="extra-chip">Mascotas</span> }
+                    @if (h.tieneCocina)            { <span class="extra-chip">Cocina</span> }
+                    @if (h.tieneAireAcondicionado) { <span class="extra-chip">A/C</span> }
+                  </div>
+                </td>
+                <td>
+                  <span class="badge" [class]="h.estado ? 'badge-success' : 'badge-danger'">
+                    {{ h.estado ? 'Activa' : 'Inactiva' }}
+                  </span>
+                </td>
+                <td>
+                  <button mat-icon-button color="warn" (click)="eliminar(h)" matTooltip="Eliminar">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="table-footer">{{ habitaciones().length }} habitación(es)</div>
+    </div>
+  }
+</div>

@@ -1,0 +1,86 @@
+<div class="admin-page">
+  <h1 class="section-title">Dashboard</h1>
+
+  @if (loading()) {
+    <app-loading-spinner message="Cargando estadísticas..." />
+  } @else {
+
+    <!-- Stats cards -->
+    <div class="stats-grid">
+      <div class="stat-card stat-blue">
+        <mat-icon>apartment</mat-icon>
+        <div class="stat-content">
+          <span class="stat-label">Propiedades</span>
+          <span class="stat-value">{{ totalPropiedades() }}</span>
+        </div>
+      </div>
+      <div class="stat-card stat-purple">
+        <mat-icon>event_available</mat-icon>
+        <div class="stat-content">
+          <span class="stat-label">Total Reservas</span>
+          <span class="stat-value">{{ totalReservas() }}</span>
+        </div>
+      </div>
+      <div class="stat-card stat-orange">
+        <mat-icon>pending_actions</mat-icon>
+        <div class="stat-content">
+          <span class="stat-label">Pendientes</span>
+          <span class="stat-value">{{ reservasPendientes() }}</span>
+        </div>
+      </div>
+      <div class="stat-card stat-green">
+        <mat-icon>attach_money</mat-icon>
+        <div class="stat-content">
+          <span class="stat-label">Ingresos completados</span>
+          <span class="stat-value">{{ totalIngresos() | currency:'USD':'symbol':'1.0-0' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent reservations -->
+    <div class="table-card">
+      <div class="table-header">
+        <h2 class="table-title">Últimas Reservas</h2>
+        <a mat-stroked-button routerLink="/admin/reservas">Ver todas</a>
+      </div>
+
+      @if (recientes().length === 0) {
+        <div class="empty-state" style="padding:2rem">
+          <mat-icon>event_busy</mat-icon>
+          <p>No hay reservas registradas.</p>
+        </div>
+      } @else {
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Propiedad</th>
+                <th>Cliente</th>
+                <th>Check-in</th>
+                <th>Check-out</th>
+                <th>Estado</th>
+                <th class="text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of recientes(); track r.reservaId) {
+                <tr>
+                  <td><span class="mono">{{ r.codigoReserva }}</span></td>
+                  <td>{{ r.nombrePropiedad ?? '—' }}</td>
+                  <td>{{ r.nombreCliente ?? '—' }}</td>
+                  <td>{{ r.fechaCheckIn | date:'dd/MM/yy' }}</td>
+                  <td>{{ r.fechaCheckOut | date:'dd/MM/yy' }}</td>
+                  <td>
+                    <span class="badge" [class]="estadoClass(r.estado)">{{ r.estado }}</span>
+                  </td>
+                  <td class="text-right font-semibold">{{ r.total | currency:'USD':'symbol':'1.2-2' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,76 @@
+<div class="admin-page">
+  <div class="page-header">
+    <h1 class="section-title">Gestión de Usuarios</h1>
+    <button mat-icon-button (click)="cargar()" matTooltip="Recargar">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </div>
+
+  <form [formGroup]="filterForm" class="filter-bar">
+    <mat-form-field appearance="outline" class="filter-field-lg">
+      <mat-label>Buscar usuario</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput formControlName="search" placeholder="Nombre, email o rol..." />
+    </mat-form-field>
+  </form>
+
+  @if (loading()) {
+    <app-loading-spinner message="Cargando usuarios..." />
+  } @else if (filtered().length === 0) {
+    <div class="empty-state">
+      <mat-icon style="font-size:3rem;height:3rem;width:3rem">manage_accounts</mat-icon>
+      <h3>No se encontraron usuarios</h3>
+    </div>
+  } @else {
+    <div class="table-card">
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Rol</th>
+              <th>Último Acceso</th>
+              <th>Estado</th>
+              <th>Cambiar Rol</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (u of filtered(); track u.usuarioId) {
+              <tr>
+                <td class="font-semibold">{{ u.nombreCompleto }}</td>
+                <td class="text-muted">{{ u.email }}</td>
+                <td>
+                  <span class="badge badge-primary">{{ u.rolNombre }}</span>
+                </td>
+                <td class="text-muted text-sm">{{ u.ultimoAcceso ? (u.ultimoAcceso | date:'dd/MM/yy HH:mm') : '—' }}</td>
+                <td>
+                  <mat-slide-toggle
+                    [checked]="u.estado"
+                    color="primary"
+                    [disabled]="updating() === u.usuarioId"
+                    (change)="toggleEstado(u)"
+                    matTooltip="{{ u.estado ? 'Desactivar' : 'Activar' }}"
+                  />
+                </td>
+                <td>
+                  <mat-select
+                    [value]="u.rolId"
+                    (selectionChange)="cambiarRol(u, $event.value)"
+                    [disabled]="updating() === u.usuarioId"
+                    class="rol-select"
+                  >
+                    @for (r of roles(); track r.rolId) {
+                      <mat-option [value]="r.rolId">{{ r.nombre }}</mat-option>
+                    }
+                  </mat-select>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="table-footer">{{ filtered().length }} usuario(s)</div>
+    </div>
+  }
+</div>

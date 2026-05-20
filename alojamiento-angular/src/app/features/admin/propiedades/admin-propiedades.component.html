@@ -1,0 +1,143 @@
+<div class="admin-page">
+  <div class="page-header">
+    <h1 class="section-title">Gestión de Propiedades</h1>
+    <button mat-flat-button color="primary" (click)="showForm.set(!showForm())">
+      <mat-icon>{{ showForm() ? 'close' : 'add' }}</mat-icon>
+      {{ showForm() ? 'Cancelar' : 'Nueva Propiedad' }}
+    </button>
+  </div>
+
+  <!-- Formulario nueva propiedad -->
+  @if (showForm()) {
+    <div class="form-card">
+      <h2 class="form-card-title">Nueva Propiedad</h2>
+      <form [formGroup]="propForm" (ngSubmit)="guardar()" class="prop-form">
+
+        <mat-form-field appearance="outline" class="span-2">
+          <mat-label>Nombre</mat-label>
+          <input matInput formControlName="nombre" placeholder="Hotel Ejemplo" />
+          @if (propForm.get('nombre')?.hasError('required') && propForm.get('nombre')?.touched) {
+            <mat-error>El nombre es obligatorio.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="span-2">
+          <mat-label>Descripción</mat-label>
+          <textarea matInput formControlName="descripcion" rows="3"></textarea>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="span-2">
+          <mat-label>Dirección</mat-label>
+          <mat-icon matPrefix>place</mat-icon>
+          <input matInput formControlName="direccion" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Ciudad</mat-label>
+          <mat-select formControlName="ciudadId">
+            @for (c of ciudades(); track c.ciudadId) {
+              <mat-option [value]="c.ciudadId">{{ c.nombre }}</mat-option>
+            }
+          </mat-select>
+          @if (propForm.get('ciudadId')?.hasError('required') && propForm.get('ciudadId')?.touched) {
+            <mat-error>Selecciona una ciudad.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de Alojamiento</mat-label>
+          <mat-select formControlName="tipoAlojamientoId">
+            @for (t of tipos(); track t.tipoAlojamientoId) {
+              <mat-option [value]="t.tipoAlojamientoId">{{ t.nombre }}</mat-option>
+            }
+          </mat-select>
+          @if (propForm.get('tipoAlojamientoId')?.hasError('required') && propForm.get('tipoAlojamientoId')?.touched) {
+            <mat-error>Selecciona un tipo.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Estrellas</mat-label>
+          <mat-select formControlName="estrellas">
+            @for (i of [1,2,3,4,5]; track i) {
+              <mat-option [value]="i">{{ i }} ★</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <div class="form-check-row">
+          <mat-checkbox formControlName="admiteMascotas" color="primary">Admite mascotas</mat-checkbox>
+        </div>
+
+        <div class="form-actions span-2">
+          <button mat-stroked-button type="button" (click)="showForm.set(false)">Cancelar</button>
+          <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
+            {{ submitting() ? 'Guardando...' : 'Crear Propiedad' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+  @if (loading()) {
+    <app-loading-spinner message="Cargando propiedades..." />
+  } @else if (propiedades().length === 0) {
+    <div class="empty-state">
+      <mat-icon style="font-size:3rem;height:3rem;width:3rem">apartment</mat-icon>
+      <h3>No hay propiedades registradas</h3>
+      <button mat-flat-button color="primary" (click)="showForm.set(true)">Crear primera propiedad</button>
+    </div>
+  } @else {
+    <div class="table-card">
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Ciudad</th>
+              <th>Tipo</th>
+              <th>Estrellas</th>
+              <th>Estado</th>
+              <th>Pet-Friendly</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of propiedades(); track p.propiedadId) {
+              <tr>
+                <td class="font-semibold">{{ p.nombre }}</td>
+                <td>{{ p.ciudad ?? '—' }}</td>
+                <td>{{ p.tipoAlojamiento ?? '—' }}</td>
+                <td>
+                  <div class="stars-inline">
+                    @for (i of stars(5); track i) {
+                      <mat-icon class="star-sm" [class.filled]="i < p.estrellas">star</mat-icon>
+                    }
+                  </div>
+                </td>
+                <td>
+                  <span class="badge" [class]="p.estado === 'Activa' ? 'badge-success' : 'badge-danger'">
+                    {{ p.estado ?? 'Activa' }}
+                  </span>
+                </td>
+                <td>
+                  @if (p.admiteMascotas) {
+                    <span class="badge badge-success">Sí</span>
+                  } @else {
+                    <span class="badge badge-danger">No</span>
+                  }
+                </td>
+                <td>
+                  <button mat-icon-button (click)="toggleEstado(p)" [matTooltip]="p.estado === 'Activa' ? 'Desactivar' : 'Activar'">
+                    <mat-icon>{{ p.estado === 'Activa' ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="table-footer">{{ propiedades().length }} propiedad(es)</div>
+    </div>
+  }
+</div>

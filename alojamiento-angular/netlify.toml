@@ -1,0 +1,13 @@
+[build]
+  command   = "npm run build -- --configuration=production"
+  publish   = "dist/alojamiento-angular/browser"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_FLAGS    = "--legacy-peer-deps"
+
+# SPA fallback — todas las rutas devuelven index.html
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200

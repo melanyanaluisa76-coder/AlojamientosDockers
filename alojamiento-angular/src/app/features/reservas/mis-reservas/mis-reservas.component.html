@@ -1,0 +1,84 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="section-title">Mis Reservas</h1>
+      <p class="text-sm text-muted">Historial de tus reservas</p>
+    </div>
+    <a mat-flat-button color="primary" routerLink="/propiedades">
+      <mat-icon>add</mat-icon> Nueva Reserva
+    </a>
+  </div>
+
+  @if (loading()) {
+    <app-loading-spinner message="Cargando reservas..." />
+  } @else if (reservas().length === 0) {
+    <div class="empty-state">
+      <mat-icon style="font-size:3rem;height:3rem;width:3rem">event_busy</mat-icon>
+      <h3>No tienes reservas aún</h3>
+      <p>Explora nuestras propiedades y haz tu primera reserva.</p>
+      <a mat-flat-button color="primary" routerLink="/propiedades">Ver propiedades</a>
+    </div>
+  } @else {
+    <div class="reservas-list">
+      @for (r of reservas(); track r.reservaId) {
+        <div class="reserva-card">
+          <div class="reserva-header">
+            <div class="reserva-id">
+              <mat-icon>confirmation_number</mat-icon>
+              <span class="codigo">{{ r.codigoReserva }}</span>
+            </div>
+            <span class="badge" [class]="estadoClass(r.estado)">{{ r.estado }}</span>
+          </div>
+
+          <mat-divider />
+
+          <div class="reserva-body">
+            <div class="reserva-info">
+              @if (r.nombrePropiedad) {
+                <div class="info-row">
+                  <mat-icon>apartment</mat-icon>
+                  <span>{{ r.nombrePropiedad }}</span>
+                </div>
+              }
+              <div class="info-row">
+                <mat-icon>event</mat-icon>
+                <span>{{ r.fechaCheckIn | date:'dd/MM/yyyy' }} → {{ r.fechaCheckOut | date:'dd/MM/yyyy' }}</span>
+              </div>
+              <div class="info-row">
+                <mat-icon>people</mat-icon>
+                <span>{{ r.numAdultos }} adulto(s)@if (r.numNinos > 0) {, {{ r.numNinos }} niño(s)}</span>
+              </div>
+              @if (r.nochesTotal) {
+                <div class="info-row">
+                  <mat-icon>nights_stay</mat-icon>
+                  <span>{{ r.nochesTotal }} noche(s)</span>
+                </div>
+              }
+            </div>
+
+            <div class="reserva-total">
+              <span class="total-label">Total</span>
+              <span class="total-value">{{ r.total | currency:'USD':'symbol':'1.2-2' }}</span>
+              @if (r.descuento && r.descuento > 0) {
+                <span class="discount-badge">-{{ r.descuento | number:'1.0-0' }}%</span>
+              }
+            </div>
+          </div>
+
+          <div class="reserva-actions">
+            @if (isPendingPayment(r)) {
+              <a mat-flat-button color="primary" [routerLink]="['/checkout', r.codigoReserva]">
+                <mat-icon>payment</mat-icon> Pagar
+              </a>
+            }
+            @if (hasInvoice(r)) {
+              <a mat-stroked-button color="accent" [routerLink]="['/factura', r.codigoReserva]">
+                <mat-icon>receipt_long</mat-icon> Ver Factura
+              </a>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
