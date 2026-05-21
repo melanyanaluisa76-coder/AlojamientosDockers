@@ -1,0 +1,1815 @@
+openapi: 3.0.3
+
+# ════════════════════════════════════════════════════════════════════
+#  AlojamientoMR — Contrato de Integración con Booking (Analuisa)
+#  Versión:  2.0.0
+#  Fecha:    2026-05-20
+#  Autora:   Melany Analuisa
+#
+#  Propósito:
+#    Especificación oficial entregada al equipo de Booking para
+#    integrar el catálogo de alojamientos, disponibilidad, gestión
+#    de huéspedes, reservas y facturación de AlojamientoMR.
+#
+#  Convención de rutas:
+#    Todos los endpoints llevan el sufijo "analuisa" como identificador
+#    de integración acordado con el equipo externo.
+#    Ejemplo: /api/v1/alojamientosanaluisa
+#
+#  Servidor Gateway de producción:
+#    https://bookingdb-cloud.onrender.com/api/v1
+# ════════════════════════════════════════════════════════════════════
+
+info:
+  title: AlojamientoMR — Contrato de Integración con Booking
+  description: |
+    API pública expuesta a través del API Gateway para la integración con la plataforma Booking.
+
+    ## Flujo principal de integración
+
+    ```
+    [Booking] ──► GET  /alojamientosanaluisa           → Buscar propiedades
+    [Booking] ──► GET  /alojamientosanaluisa/{id}       → Ver detalle
+    [Booking] ──► GET  /habitacionesanaluisa/alojamiento/{id} → Habitaciones disponibles
+    [Booking] ──► GET  /calendarioanaluisa/habitacion/{id}    → Disponibilidad mensual
+    [Booking] ──► POST /clientesanaluisa/registrar      → Registrar huésped
+    [Booking] ──► POST /reservasanaluisa                → Crear reserva
+    [Booking] ──► GET  /reservasanaluisa/{id}           → Consultar reserva
+    [Booking] ──► GET  /facturasanaluisa/reserva/{id}   → Obtener factura
+    ```
+
+    ## Envelope de respuesta estándar
+    Todas las respuestas envuelven el payload en:
+    ```json
+    {
+      "success": true,
+      "message": null,
+      "errors": [],
+      "data": { ... }
+    }
+    ```
+
+    ## Manejo de errores
+    | Código | Significado |
+    |--------|-------------|
+    | 400    | Validación de negocio fallida (fechas, disponibilidad) |
+    | 404    | Recurso no encontrado |
+    | 409    | Conflicto (habitación ya reservada) |
+    | 500    | Error interno del servidor |
+
+  version: 2.0.0
+  contact:
+    name: Equipo AlojamientoMR
+    email: melanyanaluisa76@gmail.com
+
+servers:
+  - url: https://bookingdb-cloud.onrender.com/api/v1
+    description: Producción — API Gateway (Render)
+  - url: http://localhost:5001/api/v1
+    description: Desarrollo Local — API Gateway
+
+tags:
+  - name: Alojamientos
+    description: |
+      Catálogo de propiedades disponibles para reserva.
+      Redirigido internamente al microservicio Alojamientos.API
+  - name: Habitaciones
+    description: |
+      Consulta de habitaciones por propiedad y disponibilidad por fechas.
+      Redirigido internamente al microservicio Alojamientos.API
+  - name: Disponibilidad
+    description: |
+      Calendario de disponibilidad diaria de habitaciones.
+      Redirigido internamente al microservicio Alojamientos.API
+  - name: Clientes
+    description: |
+      Registro y consulta de perfiles de huéspedes.
+      Redirigido internamente al microservicio Usuarios.API
+  - name: Reservas (Booking)
+    description: |
+      Creación, consulta y gestión del ciclo de vida de reservas.
+      Redirigido internamente al microservicio Reservas.API
+  - name: Facturación
+    description: |
+      Comprobantes de pago y métodos de pago disponibles.
+      Redirigido internamente al microservicio Facturacion.API
+
+paths:
+
+  # ════════════════════════════════════════════════════════════════
+  #  MÓDULO 1: ALOJAMIENTOS
+  #  Ruta interna gateway → Alojamientos.API: /api/v1/alojamientosanaluisa
+  # ════════════════════════════════════════════════════════════════
+
+  /alojamientosanaluisa:
+    get:
+      tags: [Alojamientos]
+      summary: Listar todos los alojamientos
+      description: |
+        Retorna el catálogo completo de propiedades registradas.
+        Booking usa este endpoint para poblar el listado de resultados de búsqueda.
+
+        **Mapeo de campos para Booking:**
+        | Campo AlojamientoMR | Campo Booking |
+        |---------------------|---------------|
+        | `alojamientoId`     | `id_externo`  |
+        | `nombre`            | `titulo`      |
+        | `ciudad`            | `ubicacion`   |
+        | `estado`            | `disponible` (activo = true) |
+
+        Redirigido internamente al gateway: `GET /api/v1/alojamientosanaluisa`
+      operationId: GetAllAlojamientos
+      responses:
+        '200':
+          description: Catálogo de alojamientos obtenido con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseListAlojamiento'
+              example:
+                success: true
+                message: null
+                errors: []
+                data:
+                  - alojamientoId: 1
+                    socioId: 10
+                    tipoAlojamientoId: 2
+                    tipoAlojamientoNombre: "Hotel"
+                    nombre: "Grand Majestic Hotel"
+                    ciudad: "Quito"
+                    direccion: "Av. Amazonas N24-15"
+                    descripcion: "Hotel moderno de 4 estrellas con excelentes vistas."
+                    estrellas: 4
+                    calificacionPromedio: 4.6
+                    totalResenas: 32
+                    admiteMascotas: false
+                    tienePiscina: true
+                    tieneParqueadero: true
+                    estado: "Activo"
+                    fechaCreacion: "2026-05-19T22:45:00Z"
+
+    post:
+      tags: [Alojamientos]
+      summary: Registrar un nuevo alojamiento
+      description: |
+        Crea una nueva propiedad en el catálogo de AlojamientoMR.
+        Redirigido internamente al gateway: `POST /api/v1/alojamientosanaluisa`
+      operationId: CrearAlojamiento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearAlojamientoRequest'
+            example:
+              socioId: 10
+              tipoAlojamientoId: 2
+              nombre: "Grand Majestic Hotel"
+              ciudad: "Quito"
+              direccion: "Av. Amazonas N24-15"
+              descripcion: "Hotel moderno de 4 estrellas."
+              admiteMascotas: false
+              tienePiscina: true
+              tieneParqueadero: true
+      responses:
+        '201':
+          description: Alojamiento creado con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseAlojamiento'
+        '400':
+          description: Datos de creación inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+
+  /alojamientosanaluisa/{id}:
+    get:
+      tags: [Alojamientos]
+      summary: Detalle completo de un alojamiento
+      description: |
+        Recupera toda la información de una propiedad específica.
+        Booking lo usa en la página de detalle antes de que el usuario seleccione habitación.
+        Redirigido internamente al gateway: `GET /api/v1/alojamientosanaluisa/{id}`
+      operationId: GetAlojamientoById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID único del alojamiento
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Alojamiento encontrado con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseAlojamiento'
+        '404':
+          description: Alojamiento no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+
+    put:
+      tags: [Alojamientos]
+      summary: Actualizar datos de un alojamiento
+      description: |
+        Modifica la información de una propiedad existente.
+        Redirigido internamente al gateway: `PUT /api/v1/alojamientosanaluisa/{id}`
+      operationId: ActualizarAlojamiento
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarAlojamientoRequest'
+      responses:
+        '204':
+          description: Alojamiento actualizado correctamente (sin contenido)
+        '404':
+          description: Alojamiento no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+
+    delete:
+      tags: [Alojamientos]
+      summary: Eliminar un alojamiento
+      description: |
+        Elimina una propiedad del catálogo.
+        Redirigido internamente al gateway: `DELETE /api/v1/alojamientosanaluisa/{id}`
+      operationId: EliminarAlojamiento
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Alojamiento eliminado correctamente (sin contenido)
+        '404':
+          description: Alojamiento no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+
+  # ════════════════════════════════════════════════════════════════
+  #  MÓDULO 2: HABITACIONES
+  #  Ruta interna gateway → Alojamientos.API: /api/v1/habitacionesanaluisa
+  # ════════════════════════════════════════════════════════════════
+
+  /habitacionesanaluisa/alojamiento/{alojamientoId}:
+    get:
+      tags: [Habitaciones]
+      summary: Habitaciones de un alojamiento
+      description: |
+        Lista todas las habitaciones asociadas a una propiedad.
+        **Endpoint crítico para Booking:** se llama después de ver el detalle del alojamiento
+        para mostrar al usuario qué tipos de habitación puede reservar.
+        Redirigido internamente al gateway: `GET /api/v1/habitacionesanaluisa/alojamiento/{alojamientoId}`
+      operationId: GetHabitacionesByAlojamiento
+      parameters:
+        - name: alojamientoId
+          in: path
+          required: true
+          description: ID del alojamiento al que pertenecen las habitaciones
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Listado de habitaciones obtenido con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseListHabitacion'
+              example:
+                success: true
+                message: null
+                errors: []
+                data:
+                  - habitacionId: 101
+                    alojamientoId: 1
+                    nombre: "Suite Presidencial"
+                    descripcion: "Suite de lujo con vista panorámica."
+                    precioPorNoche: 150.00
+                    moneda: "USD"
+                    capacidadAdultos: 2
+                    capacidadNinos: 1
+                    numDormitorios: 1
+                    numBanos: 2
+                    tieneCocina: false
+                    tieneAireAcondicionado: true
+                    estado: "Disponible"
+        '404':
+          description: Alojamiento no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+
+  /habitacionesanaluisa/{id}:
+    get:
+      tags: [Habitaciones]
+      summary: Detalle de una habitación específica
+      description: |
+        Recupera la información completa de una habitación por su ID.
+        Redirigido internamente al gateway: `GET /api/v1/habitacionesanaluisa/{id}`
+      operationId: GetHabitacionById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID único de la habitación
+          schema:
+            type: integer
+            example: 101
+      responses:
+        '200':
+          description: Habitación encontrada con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseHabitacion'
+        '404':
+          description: Habitación no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+
+    delete:
+      tags: [Habitaciones]
+      summary: Eliminar una habitación
+      description: |
+        Elimina una habitación de una propiedad.
+        Redirigido internamente al gateway: `DELETE /api/v1/habitacionesanaluisa/{id}`
+      operationId: EliminarHabitacion
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Habitación eliminada correctamente (sin contenido)
+        '404':
+          description: Habitación no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+
+  /habitacionesanaluisa:
+    post:
+      tags: [Habitaciones]
+      summary: Registrar una nueva habitación
+      description: |
+        Agrega una habitación a una propiedad existente.
+        Redirigido internamente al gateway: `POST /api/v1/habitacionesanaluisa`
+      operationId: CrearHabitacion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearHabitacionRequest'
+            example:
+              alojamientoId: 1
+              nombre: "Suite Presidencial"
+              descripcion: "Suite de lujo con vista panorámica."
+              precioPorNoche: 150.00
+              capacidadAdultos: 2
+              capacidadNinos: 1
+              numDormitorios: 1
+              numBanos: 2
+              tieneCocina: false
+              tieneAireAcondicionado: true
+      responses:
+        '201':
+          description: Habitación creada con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseHabitacion'
+
+  # ════════════════════════════════════════════════════════════════
+  #  MÓDULO 3: DISPONIBILIDAD / CALENDARIO
+  #  Ruta interna gateway → Alojamientos.API: /api/v1/calendarioanaluisa
+  # ════════════════════════════════════════════════════════════════
+
+  /calendarioanaluisa/habitacion/{habitacionId}:
+    get:
+      tags: [Disponibilidad]
+      summary: Disponibilidad mensual de una habitación
+      description: |
+        Lista el estado día a día de disponibilidad para un mes y año específicos.
+        **Endpoint crítico para Booking:** se usa para renderizar el calendario de fechas
+        disponibles antes de que el usuario elija sus fechas de check-in/check-out.
+
+        Estados posibles por día:
+        - `Disponible` — la habitación está libre ese día
+        - `Reservado`  — la habitación tiene reserva activa
+        - `Bloqueado`  — la habitación está bloqueada administrativamente
+
+        Redirigido internamente al gateway: `GET /api/v1/calendarioanaluisa/habitacion/{habitacionId}`
+      operationId: GetDisponibilidadMensual
+      parameters:
+        - name: habitacionId
+          in: path
+          required: true
+          description: ID único de la habitación a consultar
+          schema:
+            type: integer
+            example: 101
+        - name: mes
+          in: query
+          required: true
+          description: Número de mes (1 al 12)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+            example: 7
+        - name: anio
+          in: query
+          required: true
+          description: Año de consulta (mínimo 2020)
+          schema:
+            type: integer
+            minimum: 2020
+            example: 2026
+      responses:
+        '200':
+          description: Disponibilidad mensual obtenida con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseListCalendario'
+              example:
+                success: true
+                message: null
+                errors: []
+                data:
+                  - calendarioId: 200
+                    habitacionId: 101
+                    fecha: "2026-07-01"
+                    estado: "Disponible"
+                  - calendarioId: 201
+                    habitacionId: 101
+                    fecha: "2026-07-02"
+                    estado: "Disponible"
+                  - calendarioId: 202
+                    habitacionId: 101
+                    fecha: "2026-07-03"
+                    estado: "Reservado"
+        '400':
+          description: Mes o año fuera de rango
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+
+  /calendarioanaluisa/bloquear:
+    post:
+      tags: [Disponibilidad]
+      summary: Bloquear rango de fechas de una habitación
+      description: |
+        Bloquea administrativamente un rango de fechas en el calendario de una habitación.
+        Booking puede usar esto para reservas temporales mientras el usuario completa el pago.
+        Redirigido internamente al gateway: `POST /api/v1/calendarioanaluisa/bloquear`
+      operationId: BloquearFechas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BloquearFechasRequest'
+            example:
+              habitacionId: 101
+              fechaInicio: "2026-07-01"
+              fechaFin: "2026-07-05"
+      responses:
+        '200':
+          description: Fechas bloqueadas exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseListCalendario'
+        '400':
+          description: Rango de fechas inválido o ya bloqueado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+
+  # ════════════════════════════════════════════════════════════════
+  #  MÓDULO 4: CLIENTES / HUÉSPEDES
+  #  Ruta interna gateway → Usuarios.API: /api/v1/clientesanaluisa
+  # ════════════════════════════════════════════════════════════════
+
+  /clientesanaluisa/registrar:
+    post:
+      tags: [Clientes]
+      summary: Registrar nuevo huésped
+      description: |
+        Crea el perfil de un nuevo cliente/huésped en AlojamientoMR.
+        Booking llama a este endpoint cuando un usuario nuevo se registra
+        por primera vez para completar una reserva.
+        Redirigido internamente al gateway: `POST /api/v1/clientesanaluisa/registrar`
+      operationId: RegistrarCliente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrarClienteRequest'
+            example:
+              email: "juan.perez@email.com"
+              password: "PasswordSeguro123"
+              nombreCompleto: "Juan Pérez"
+              cedula: "1712345678"
+              telefono: "0991234567"
+              domicilio: "Av. Principal 123, Quito"
+      responses:
+        '201':
+          description: Cliente registrado con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseSuccess'
+              example:
+                success: true
+                message: "Cliente registrado exitosamente"
+                errors: []
+                data: null
+        '400':
+          description: Datos inválidos (email mal formado, cédula duplicada, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+              example:
+                success: false
+                message: "Ya existe un cliente con esa cédula."
+                errors: ["DuplicateKeyException"]
+                data: null
+
+  /clientesanaluisa/cedula/{cedula}:
+    get:
+      tags: [Clientes]
+      summary: Buscar huésped por cédula
+      description: |
+        Verifica si un huésped ya existe por su número de cédula.
+        Booking usa esto para evitar registros duplicados antes de crear una reserva.
+        Si el cliente existe, Booking puede reutilizar su `clienteId` sin re-registrar.
+        Redirigido internamente al gateway: `GET /api/v1/clientesanaluisa/cedula/{cedula}`
+      operationId: GetClienteByCedula
+      parameters:
+        - name: cedula
+          in: path
+          required: true
+          description: Número de cédula del huésped (solo 10 dígitos)
+          schema:
+            type: string
+            pattern: '^\d{10}$'
+            example: "1712345678"
+      responses:
+        '200':
+          description: Cliente encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseCliente'
+        '404':
+          description: No existe cliente con esa cédula
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+
+  /clientesanaluisa/{clienteId}:
+    get:
+      tags: [Clientes]
+      summary: Perfil completo del huésped
+      description: |
+        Recupera el perfil completo de un huésped por su ID.
+        Booking lo usa en la sección "Mi Cuenta" del usuario autenticado.
+        Redirigido internamente al gateway: `GET /api/v1/clientesanaluisa/{clienteId}`
+      operationId: GetClienteById
+      parameters:
+        - name: clienteId
+          in: path
+          required: true
+          description: ID único del cliente
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Perfil del huésped encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseCliente'
+              example:
+                success: true
+                message: null
+                errors: []
+                data:
+                  clienteId: 1
+                  nombreCompleto: "Juan Pérez"
+                  email: "juan.perez@email.com"
+                  cedula: "1712345678"
+                  telefono: "0991234567"
+                  domicilio: "Av. Principal 123, Quito"
+                  totalReservas: 3
+                  fechaCreacion: "2026-01-15T10:00:00Z"
+        '404':
+          description: Cliente no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+
+    put:
+      tags: [Clientes]
+      summary: Actualizar perfil del huésped
+      description: |
+        Modifica los datos personales de un cliente existente.
+        Redirigido internamente al gateway: `PUT /api/v1/clientesanaluisa/{clienteId}`
+      operationId: ActualizarCliente
+      parameters:
+        - name: clienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarClienteRequest'
+      responses:
+        '200':
+          description: Cliente actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseSuccess'
+        '404':
+          description: Cliente no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+
+  # ════════════════════════════════════════════════════════════════
+  #  MÓDULO 5: RESERVAS (BOOKING)
+  #  Ruta interna gateway → Reservas.API: /api/v1/reservasanaluisa
+  # ════════════════════════════════════════════════════════════════
+
+  /reservasanaluisa:
+    post:
+      tags: [Reservas (Booking)]
+      summary: Crear nueva reserva
+      description: |
+        **Acción principal del flujo Booking.** El usuario selecciona habitación(es),
+        fechas y confirma su reserva.
+
+        El backend orquesta internamente:
+        1. Verificación de disponibilidad vía gRPC con Alojamientos.API
+        2. Cálculo de noches y monto total
+        3. Bloqueo del calendario de disponibilidad
+        4. Generación del código único de reserva (`RES-{id}-{hash}`)
+        5. Publicación de evento en RabbitMQ para notificaciones
+
+        Redirigido internamente al gateway: `POST /api/v1/reservasanaluisa`
+      operationId: CrearReserva
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearReservaRequest'
+            example:
+              clienteId: 1
+              alojamientoId: 1
+              fechaCheckIn: "2026-07-01"
+              fechaCheckOut: "2026-07-05"
+              numAdultos: 2
+              numNinos: 0
+              llevaMascotas: false
+              codigoDescuento: null
+              habitaciones:
+                - habitacionId: 101
+                  precioPorNoche: 150.00
+                  numNoches: 4
+      responses:
+        '201':
+          description: Reserva creada con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseReserva'
+              example:
+                success: true
+                message: "Reserva creada exitosamente"
+                errors: []
+                data:
+                  reservaId: 55
+                  clienteId: 1
+                  alojamientoId: 1
+                  codigoReserva: "RES-55-a3f9"
+                  fechaCheckIn: "2026-07-01"
+                  fechaCheckOut: "2026-07-05"
+                  numAdultos: 2
+                  numNinos: 0
+                  llevaMascotas: false
+                  numHabitaciones: 1
+                  subTotal: 600.00
+                  total: 600.00
+                  moneda: "USD"
+                  estado: "Pendiente"
+                  fechaCreacion: "2026-05-20T10:00:00Z"
+                  detallesHabitacion:
+                    - detalleId: 120
+                      habitacionId: 101
+                      precioPorNoche: 150.00
+                      numNoches: 4
+                      subTotalHabitacion: 600.00
+                  codigoDescuentoAplicado: null
+                  porcentajeDescuento: null
+        '400':
+          description: Error de negocio (habitación no disponible, fechas inválidas)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+              example:
+                success: false
+                message: "Habitación 101 no disponible: Las fechas seleccionadas ya están reservadas."
+                errors: ["BusinessRuleException"]
+                data: null
+        '404':
+          description: Alojamiento o cliente no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+
+  /reservasanaluisa/{id}:
+    get:
+      tags: [Reservas (Booking)]
+      summary: Consultar reserva por ID
+      description: |
+        Devuelve el detalle completo de una reserva incluyendo habitaciones y montos.
+        Booking lo usa en la página de confirmación y en el historial de reservas.
+        Redirigido internamente al gateway: `GET /api/v1/reservasanaluisa/{id}`
+      operationId: GetReservaById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID único numérico de la reserva
+          schema:
+            type: integer
+            example: 55
+      responses:
+        '200':
+          description: Reserva encontrada con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseReserva'
+        '404':
+          description: Reserva no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+
+  /reservasanaluisa/cliente/{clienteId}:
+    get:
+      tags: [Reservas (Booking)]
+      summary: Historial de reservas de un huésped
+      description: |
+        Lista el historial completo de reservas de un cliente.
+        Booking lo usa en la sección "Mis Viajes" del usuario.
+        Redirigido internamente al gateway: `GET /api/v1/reservasanaluisa/cliente/{clienteId}`
+      operationId: GetReservasByCliente
+      parameters:
+        - name: clienteId
+          in: path
+          required: true
+          description: ID del cliente cuyas reservas se consultan
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Historial de reservas obtenido con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseListReserva'
+
+  /reservasanaluisa/resumen/cliente/{clienteId}:
+    get:
+      tags: [Reservas (Booking)]
+      summary: Resumen ligero de reservas de un huésped
+      description: |
+        Retorna las reservas en formato simplificado (sin desglose de habitaciones),
+        óptimo para listados y tarjetas en el dashboard del usuario.
+        Redirigido internamente al gateway: `GET /api/v1/reservasanaluisa/resumen/cliente/{clienteId}`
+      operationId: GetResumenReservasByCliente
+      parameters:
+        - name: clienteId
+          in: path
+          required: true
+          description: ID del cliente
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Resumen de reservas obtenido con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseListReservaResumen'
+
+  /reservasanaluisa/{id}/estado:
+    patch:
+      tags: [Reservas (Booking)]
+      summary: Actualizar estado de una reserva
+      description: |
+        Cambia el estado del ciclo de vida de una reserva.
+
+        **Transiciones de estado permitidas:**
+        ```
+        Pendiente ──► Confirmada
+        Confirmada ──► Completada
+        Pendiente  ──► Cancelada
+        Confirmada ──► Cancelada
+        ```
+
+        Redirigido internamente al gateway: `PATCH /api/v1/reservasanaluisa/{id}/estado`
+      operationId: ActualizarEstadoReserva
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID único de la reserva
+          schema:
+            type: integer
+            example: 55
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarEstadoReservaRequest'
+            example:
+              estado: "Confirmada"
+      responses:
+        '204':
+          description: Estado actualizado con éxito (sin contenido)
+        '400':
+          description: Transición de estado no permitida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+        '404':
+          description: Reserva no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+
+  # ════════════════════════════════════════════════════════════════
+  #  MÓDULO 6: FACTURACIÓN
+  #  Ruta interna gateway → Facturacion.API: /api/v1/facturasanaluisa
+  #                                          /api/v1/metodospagoanaluisa
+  # ════════════════════════════════════════════════════════════════
+
+  /facturasanaluisa/reserva/{reservaId}:
+    get:
+      tags: [Facturación]
+      summary: Comprobante de pago de una reserva
+      description: |
+        Recupera la factura/comprobante de pago asociado a una reserva.
+        Booking lo usa en la sección "Mis Facturas" y en el email de confirmación de pago.
+        Redirigido internamente al gateway: `GET /api/v1/facturasanaluisa/reserva/{reservaId}`
+      operationId: GetFacturaByReserva
+      parameters:
+        - name: reservaId
+          in: path
+          required: true
+          description: ID de la reserva cuya factura se consulta
+          schema:
+            type: integer
+            example: 55
+      responses:
+        '200':
+          description: Factura encontrada con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseFactura'
+              example:
+                success: true
+                message: null
+                errors: []
+                data:
+                  facturaId: 10
+                  reservaId: 55
+                  codigoReserva: "RES-55-a3f9"
+                  monto: 600.00
+                  moneda: "USD"
+                  metodoPago: "CREDITO"
+                  estado: "Aprobado"
+                  fechaPago: "2026-07-01T14:30:00Z"
+                  fechaCreacion: "2026-05-20T10:00:00Z"
+        '404':
+          description: Factura no encontrada para esa reserva
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+
+  /facturasanaluisa/resumen/reserva/{reservaId}:
+    get:
+      tags: [Facturación]
+      summary: Resumen liviano de factura por reserva
+      description: |
+        Versión simplificada de la factura para listados y dashboards.
+        Redirigido internamente al gateway: `GET /api/v1/facturasanaluisa/resumen/reserva/{reservaId}`
+      operationId: GetResumenFacturaByReserva
+      parameters:
+        - name: reservaId
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 55
+      responses:
+        '200':
+          description: Resumen de factura obtenido con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseFactura'
+        '404':
+          description: Factura no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+
+  /facturasanaluisa:
+    post:
+      tags: [Facturación]
+      summary: Crear factura para una reserva
+      description: |
+        Registra el comprobante de pago de una reserva confirmada.
+        Booking llama a este endpoint al confirmar el método de pago del usuario.
+        Redirigido internamente al gateway: `POST /api/v1/facturasanaluisa`
+      operationId: CrearFactura
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearFacturaRequest'
+            example:
+              reservaId: 55
+              metodoPagoId: 1
+              referenciaPago: "TXN-20260701-001"
+      responses:
+        '201':
+          description: Factura creada con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseFactura'
+        '400':
+          description: Reserva inválida o ya facturada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+
+  /metodospagoanaluisa:
+    get:
+      tags: [Facturación]
+      summary: Métodos de pago disponibles
+      description: |
+        Lista las formas de pago aceptadas por AlojamientoMR.
+        Booking usa este endpoint para poblar el selector de método de pago en el checkout.
+        Redirigido internamente al gateway: `GET /api/v1/metodospagoanaluisa`
+      operationId: GetMetodosPago
+      responses:
+        '200':
+          description: Métodos de pago obtenidos con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseListMetodoPago'
+              example:
+                success: true
+                message: null
+                errors: []
+                data:
+                  - metodoPagoId: 1
+                    tipo: "CREDITO"
+                  - metodoPagoId: 2
+                    tipo: "DEBITO"
+                  - metodoPagoId: 3
+                    tipo: "EnSitio"
+
+# ════════════════════════════════════════════════════════════════════
+#  COMPONENTES / MODELOS (SCHEMAS)
+# ════════════════════════════════════════════════════════════════════
+components:
+  schemas:
+
+    # ── Alojamientos ──────────────────────────────────────────────
+    AlojamientoDto:
+      type: object
+      description: |
+        Mapeo de campos para integración con Booking:
+        | AlojamientoMR      | Booking           |
+        |--------------------|-------------------|
+        | alojamientoId      | id_externo        |
+        | nombre             | titulo            |
+        | ciudad + direccion | ubicacion         |
+        | estado == "Activo" | disponible = true |
+      properties:
+        alojamientoId:
+          type: integer
+          example: 1
+        socioId:
+          type: integer
+          example: 10
+        tipoAlojamientoId:
+          type: integer
+          example: 2
+        tipoAlojamientoNombre:
+          type: string
+          example: "Hotel"
+        nombre:
+          type: string
+          example: "Grand Majestic Hotel"
+        ciudad:
+          type: string
+          nullable: true
+          example: "Quito"
+        direccion:
+          type: string
+          example: "Av. Amazonas N24-15"
+        descripcion:
+          type: string
+          nullable: true
+          example: "Hotel moderno de 4 estrellas con excelentes vistas."
+        estrellas:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 5
+          example: 4
+        calificacionPromedio:
+          type: number
+          format: double
+          example: 4.6
+        totalResenas:
+          type: integer
+          example: 32
+        admiteMascotas:
+          type: boolean
+          example: false
+        tienePiscina:
+          type: boolean
+          example: true
+        tieneParqueadero:
+          type: boolean
+          example: true
+        estado:
+          type: string
+          enum: [Activo, Inactivo]
+          example: "Activo"
+        fechaCreacion:
+          type: string
+          format: date-time
+          example: "2026-05-19T22:45:00Z"
+      required: [alojamientoId, nombre, direccion, estado]
+
+    CrearAlojamientoRequest:
+      type: object
+      required: [socioId, tipoAlojamientoId, nombre, direccion]
+      properties:
+        socioId:
+          type: integer
+          example: 10
+        tipoAlojamientoId:
+          type: integer
+          example: 2
+        nombre:
+          type: string
+          maxLength: 200
+          example: "Grand Majestic Hotel"
+        ciudad:
+          type: string
+          maxLength: 100
+          nullable: true
+          example: "Quito"
+        direccion:
+          type: string
+          maxLength: 300
+          example: "Av. Amazonas N24-15"
+        descripcion:
+          type: string
+          nullable: true
+          example: "Hotel moderno de 4 estrellas."
+        admiteMascotas:
+          type: boolean
+          default: false
+        tienePiscina:
+          type: boolean
+          default: false
+        tieneParqueadero:
+          type: boolean
+          default: false
+
+    ActualizarAlojamientoRequest:
+      type: object
+      required: [nombre, direccion, tipoAlojamientoId, admiteMascotas, tienePiscina, tieneParqueadero]
+      properties:
+        nombre:
+          type: string
+          maxLength: 200
+          example: "Grand Majestic Hotel (Renovado)"
+        ciudad:
+          type: string
+          maxLength: 100
+          nullable: true
+          example: "Quito Norte"
+        direccion:
+          type: string
+          maxLength: 300
+          example: "Av. Amazonas N24-15, Edificio B"
+        descripcion:
+          type: string
+          nullable: true
+        tipoAlojamientoId:
+          type: integer
+          example: 2
+        estrellas:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 5
+          example: 4
+        admiteMascotas:
+          type: boolean
+          example: true
+        tienePiscina:
+          type: boolean
+          example: true
+        tieneParqueadero:
+          type: boolean
+          example: true
+
+    # ── Habitaciones ──────────────────────────────────────────────
+    HabitacionDto:
+      type: object
+      properties:
+        habitacionId:
+          type: integer
+          example: 101
+        alojamientoId:
+          type: integer
+          example: 1
+        nombre:
+          type: string
+          example: "Suite Presidencial"
+        descripcion:
+          type: string
+          nullable: true
+          example: "Suite de lujo con vista panorámica."
+        precioPorNoche:
+          type: number
+          format: double
+          example: 150.00
+        moneda:
+          type: string
+          default: "USD"
+        capacidadAdultos:
+          type: integer
+          example: 2
+        capacidadNinos:
+          type: integer
+          example: 1
+        numDormitorios:
+          type: integer
+          example: 1
+        numBanos:
+          type: integer
+          example: 2
+        tieneCocina:
+          type: boolean
+          example: false
+        tieneAireAcondicionado:
+          type: boolean
+          example: true
+        superficieM2:
+          type: number
+          nullable: true
+          example: 45.0
+        estado:
+          type: string
+          enum: [Disponible, Reservada, Bloqueada]
+          example: "Disponible"
+      required: [habitacionId, alojamientoId, nombre, precioPorNoche]
+
+    CrearHabitacionRequest:
+      type: object
+      required: [alojamientoId, nombre, precioPorNoche, capacidadAdultos]
+      properties:
+        alojamientoId:
+          type: integer
+          example: 1
+        nombre:
+          type: string
+          maxLength: 200
+          example: "Suite Presidencial"
+        descripcion:
+          type: string
+          nullable: true
+        precioPorNoche:
+          type: number
+          minimum: 1
+          example: 150.00
+        capacidadAdultos:
+          type: integer
+          minimum: 1
+          example: 2
+        capacidadNinos:
+          type: integer
+          default: 0
+          example: 1
+        numDormitorios:
+          type: integer
+          default: 1
+          example: 1
+        numBanos:
+          type: integer
+          default: 1
+          example: 2
+        tieneCocina:
+          type: boolean
+          default: false
+        tieneAireAcondicionado:
+          type: boolean
+          default: false
+        superficieM2:
+          type: number
+          nullable: true
+          example: 45.0
+
+    # ── Calendario / Disponibilidad ───────────────────────────────
+    CalendarioDto:
+      type: object
+      properties:
+        calendarioId:
+          type: integer
+          example: 200
+        habitacionId:
+          type: integer
+          example: 101
+        fecha:
+          type: string
+          format: date
+          example: "2026-07-01"
+        estado:
+          type: string
+          enum: [Disponible, Reservado, Bloqueado]
+          example: "Disponible"
+      required: [calendarioId, habitacionId, fecha, estado]
+
+    BloquearFechasRequest:
+      type: object
+      required: [habitacionId, fechaInicio, fechaFin]
+      properties:
+        habitacionId:
+          type: integer
+          example: 101
+        fechaInicio:
+          type: string
+          format: date
+          example: "2026-07-01"
+        fechaFin:
+          type: string
+          format: date
+          example: "2026-07-05"
+
+    # ── Clientes ──────────────────────────────────────────────────
+    ClienteDto:
+      type: object
+      properties:
+        clienteId:
+          type: integer
+          example: 1
+        nombreCompleto:
+          type: string
+          example: "Juan Pérez"
+        email:
+          type: string
+          format: email
+          example: "juan.perez@email.com"
+        cedula:
+          type: string
+          example: "1712345678"
+        telefono:
+          type: string
+          nullable: true
+          example: "0991234567"
+        domicilio:
+          type: string
+          nullable: true
+          example: "Av. Principal 123, Quito"
+        totalReservas:
+          type: integer
+          example: 3
+        fechaCreacion:
+          type: string
+          format: date-time
+          example: "2026-01-15T10:00:00Z"
+      required: [clienteId, nombreCompleto, email, cedula]
+
+    RegistrarClienteRequest:
+      type: object
+      required: [email, password, nombreCompleto, cedula, telefono, domicilio]
+      properties:
+        email:
+          type: string
+          format: email
+          example: "juan.perez@email.com"
+        password:
+          type: string
+          minLength: 8
+          example: "PasswordSeguro123"
+        nombreCompleto:
+          type: string
+          maxLength: 200
+          example: "Juan Pérez"
+        cedula:
+          type: string
+          pattern: '^\d{10}$'
+          description: Exactamente 10 dígitos numéricos
+          example: "1712345678"
+        telefono:
+          type: string
+          pattern: '^\d+$'
+          description: Solo dígitos numéricos
+          example: "0991234567"
+        domicilio:
+          type: string
+          maxLength: 300
+          example: "Av. Principal 123, Quito"
+
+    ActualizarClienteRequest:
+      type: object
+      properties:
+        nombreCompleto:
+          type: string
+          maxLength: 200
+          example: "Juan Pérez Actualizado"
+        telefono:
+          type: string
+          nullable: true
+          example: "0991234567"
+        domicilio:
+          type: string
+          maxLength: 300
+          nullable: true
+          example: "Av. Nueva 456, Quito"
+
+    # ── Reservas ──────────────────────────────────────────────────
+    ReservaDto:
+      type: object
+      properties:
+        reservaId:
+          type: integer
+          example: 55
+        clienteId:
+          type: integer
+          example: 1
+        alojamientoId:
+          type: integer
+          example: 1
+        codigoReserva:
+          type: string
+          description: Código único legible. Formato RES-{id}-{hash4}
+          example: "RES-55-a3f9"
+        fechaCheckIn:
+          type: string
+          format: date
+          example: "2026-07-01"
+        fechaCheckOut:
+          type: string
+          format: date
+          example: "2026-07-05"
+        numAdultos:
+          type: integer
+          example: 2
+        numNinos:
+          type: integer
+          example: 0
+        llevaMascotas:
+          type: boolean
+          example: false
+        numHabitaciones:
+          type: integer
+          example: 1
+        subTotal:
+          type: number
+          format: double
+          example: 600.00
+        total:
+          type: number
+          format: double
+          description: Total después de aplicar descuentos
+          example: 600.00
+        moneda:
+          type: string
+          default: "USD"
+        estado:
+          type: string
+          enum: [Pendiente, Confirmada, Cancelada, Completada]
+          example: "Pendiente"
+        fechaCreacion:
+          type: string
+          format: date-time
+          example: "2026-05-20T10:00:00Z"
+        detallesHabitacion:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetalleHabitacionDto'
+        codigoDescuentoAplicado:
+          type: string
+          nullable: true
+          example: null
+        porcentajeDescuento:
+          type: number
+          nullable: true
+          example: null
+      required: [reservaId, clienteId, alojamientoId, codigoReserva, fechaCheckIn, fechaCheckOut, estado]
+
+    DetalleHabitacionDto:
+      type: object
+      properties:
+        detalleId:
+          type: integer
+          example: 120
+        habitacionId:
+          type: integer
+          example: 101
+        precioPorNoche:
+          type: number
+          format: double
+          example: 150.00
+        numNoches:
+          type: integer
+          example: 4
+        subTotalHabitacion:
+          type: number
+          format: double
+          example: 600.00
+
+    ReservaResumenDto:
+      type: object
+      description: Versión simplificada sin desglose de habitaciones, para listados rápidos.
+      properties:
+        reservaId:
+          type: integer
+          example: 55
+        clienteId:
+          type: integer
+          example: 1
+        alojamientoId:
+          type: integer
+          example: 1
+        codigoReserva:
+          type: string
+          example: "RES-55-a3f9"
+        fechaCheckIn:
+          type: string
+          format: date
+          example: "2026-07-01"
+        fechaCheckOut:
+          type: string
+          format: date
+          example: "2026-07-05"
+        numHabitaciones:
+          type: integer
+          example: 1
+        total:
+          type: number
+          format: double
+          example: 600.00
+        moneda:
+          type: string
+          default: "USD"
+        estado:
+          type: string
+          enum: [Pendiente, Confirmada, Cancelada, Completada]
+          example: "Pendiente"
+        fechaCreacion:
+          type: string
+          format: date-time
+          example: "2026-05-20T10:00:00Z"
+
+    CrearReservaRequest:
+      type: object
+      required: [clienteId, alojamientoId, fechaCheckIn, fechaCheckOut, numAdultos, habitaciones]
+      properties:
+        clienteId:
+          type: integer
+          example: 1
+        alojamientoId:
+          type: integer
+          example: 1
+        fechaCheckIn:
+          type: string
+          format: date
+          example: "2026-07-01"
+        fechaCheckOut:
+          type: string
+          format: date
+          example: "2026-07-05"
+        numAdultos:
+          type: integer
+          minimum: 1
+          example: 2
+        numNinos:
+          type: integer
+          minimum: 0
+          default: 0
+          example: 0
+        llevaMascotas:
+          type: boolean
+          default: false
+          example: false
+        codigoDescuento:
+          type: string
+          nullable: true
+          example: null
+        habitaciones:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/DetalleHabitacionRequest'
+
+    DetalleHabitacionRequest:
+      type: object
+      required: [habitacionId, precioPorNoche, numNoches]
+      properties:
+        habitacionId:
+          type: integer
+          example: 101
+        precioPorNoche:
+          type: number
+          minimum: 1
+          example: 150.00
+        numNoches:
+          type: integer
+          minimum: 1
+          example: 4
+
+    ActualizarEstadoReservaRequest:
+      type: object
+      required: [estado]
+      properties:
+        estado:
+          type: string
+          enum: [Confirmada, Cancelada, Completada]
+          maxLength: 30
+          example: "Confirmada"
+
+    # ── Facturación ───────────────────────────────────────────────
+    FacturaDto:
+      type: object
+      properties:
+        facturaId:
+          type: integer
+          example: 10
+        reservaId:
+          type: integer
+          example: 55
+        codigoReserva:
+          type: string
+          example: "RES-55-a3f9"
+        monto:
+          type: number
+          format: double
+          example: 600.00
+        moneda:
+          type: string
+          default: "USD"
+        metodoPago:
+          type: string
+          enum: [CREDITO, DEBITO, EnSitio]
+          example: "CREDITO"
+        estado:
+          type: string
+          enum: [Pendiente, Aprobado, Rechazado]
+          example: "Aprobado"
+        referenciaPago:
+          type: string
+          nullable: true
+          example: "TXN-20260701-001"
+        fechaPago:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2026-07-01T14:30:00Z"
+        fechaCreacion:
+          type: string
+          format: date-time
+          example: "2026-05-20T10:00:00Z"
+      required: [facturaId, reservaId, monto, metodoPago, estado]
+
+    CrearFacturaRequest:
+      type: object
+      required: [reservaId, metodoPagoId]
+      properties:
+        reservaId:
+          type: integer
+          example: 55
+        metodoPagoId:
+          type: integer
+          example: 1
+        referenciaPago:
+          type: string
+          nullable: true
+          description: Número de transacción para pagos con tarjeta. Omitir para EnSitio.
+          example: "TXN-20260701-001"
+
+    MetodoPagoDto:
+      type: object
+      properties:
+        metodoPagoId:
+          type: integer
+          example: 1
+        tipo:
+          type: string
+          enum: [CREDITO, DEBITO, EnSitio]
+          example: "CREDITO"
+      required: [metodoPagoId, tipo]
+
+    # ── Envelopes de respuesta estándar ──────────────────────────
+    ApiResponseListAlojamiento:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        message: { type: string, nullable: true, example: null }
+        errors: { type: array, items: { type: string }, example: [] }
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlojamientoDto'
+
+    ApiResponseAlojamiento:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        errors: { type: array, items: { type: string } }
+        data:
+          $ref: '#/components/schemas/AlojamientoDto'
+
+    ApiResponseListHabitacion:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        errors: { type: array, items: { type: string } }
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/HabitacionDto'
+
+    ApiResponseHabitacion:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        errors: { type: array, items: { type: string } }
+        data:
+          $ref: '#/components/schemas/HabitacionDto'
+
+    ApiResponseListCalendario:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        errors: { type: array, items: { type: string } }
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CalendarioDto'
+
+    ApiResponseCliente:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        errors: { type: array, items: { type: string } }
+        data:
+          $ref: '#/components/schemas/ClienteDto'
+
+    ApiResponseReserva:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        errors: { type: array, items: { type: string } }
+        data:
+          $ref: '#/components/schemas/ReservaDto'
+
+    ApiResponseListReserva:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        errors: { type: array, items: { type: string } }
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReservaDto'
+
+    ApiResponseListReservaResumen:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        errors: { type: array, items: { type: string } }
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReservaResumenDto'
+
+    ApiResponseFactura:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        errors: { type: array, items: { type: string } }
+        data:
+          $ref: '#/components/schemas/FacturaDto'
+
+    ApiResponseListMetodoPago:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        errors: { type: array, items: { type: string } }
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/MetodoPagoDto'
+
+    ApiResponseSuccess:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        message: { type: string, example: "Operación exitosa" }
+        errors: { type: array, items: { type: string }, example: [] }
+        data: { nullable: true, example: null }
+
+    ApiResponseError:
+      type: object
+      properties:
+        success: { type: boolean, example: false }
+        message: { type: string, example: "El recurso solicitado no existe." }
+        errors: { type: array, items: { type: string }, example: ["NotFoundException"] }
+        data: { nullable: true, example: null }
