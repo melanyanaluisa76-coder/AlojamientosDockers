@@ -15,22 +15,22 @@ export class ReservasService {
   private readonly base = environment.apiBaseUrl;
 
   getReservaByCodigo(codigo: string): Observable<ApiResponse<ReservaResponse>> {
-    return this.http.get<ApiResponse<ReservaResponse>>(`${this.base}/reservas/${codigo}`);
+    return this.http.get<ApiResponse<ReservaResponse>>(`${this.base}/reservasanaluisa/${codigo}`);
   }
 
   getReservasByCliente(clienteId: number): Observable<ApiResponse<ReservaResponse[]>> {
-    return this.http.get<ApiResponse<ReservaResponse[]>>(`${this.base}/reservas/cliente/${clienteId}`);
+    return this.http.get<ApiResponse<ReservaResponse[]>>(`${this.base}/reservasanaluisa/cliente/${clienteId}`);
   }
 
   getTodasLasReservas(): Observable<ApiResponse<ReservaResponse[]>> {
-    return this.http.get<ApiResponse<ReservaResponse[]>>(`${this.base}/reservas/todas`);
+    return this.http.get<ApiResponse<ReservaResponse[]>>(`${this.base}/reservasanaluisa/todas`);
   }
 
   crearReserva(req: CrearReservaRequest): Observable<ApiResponse<ReservaResponse>> {
-    return this.http.post<ApiResponse<ReservaResponse>>(`${this.base}/reservas`, req);
+    return this.http.post<ApiResponse<ReservaResponse>>(`${this.base}/reservasanaluisa`, req);
   }
 
   actualizarEstado(id: number, req: ActualizarEstadoReservaRequest): Observable<void> {
-    return this.http.patch<void>(`${this.base}/reservas/${id}/estado`, req);
+    return this.http.patch<void>(`${this.base}/reservasanaluisa/${id}/estado`, req);
   }
 }

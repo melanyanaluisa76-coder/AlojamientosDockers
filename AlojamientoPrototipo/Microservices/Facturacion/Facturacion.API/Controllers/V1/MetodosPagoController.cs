@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Facturacion.API.Controllers.V1;
 
 [ApiController]
-[Route("api/v1/[controller]")]
+[Route("api/v1/metodospagoanaluisa")]
 public class MetodosPagoController : ControllerBase
 {
     private readonly IMetodosPagoService _service;

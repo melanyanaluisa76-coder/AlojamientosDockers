@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Facturacion.API.Controllers.V1;
 
 [ApiController]
-[Route("api/v1/[controller]")]
+[Route("api/v1/facturasanaluisa")]
 public class FacturasController : ControllerBase
 {
     private readonly IFacturasService _service;
@@ -28,7 +28,7 @@ public class FacturasController : ControllerBase
     public async Task<IActionResult> CrearFactura([FromBody] CrearFacturaRequest request)
     {
         var result = await _service.CrearAsync(request);
-        return Created($"/api/v1/facturas/{result.FacturaId}", result);
+        return Created($"/api/v1/facturasanaluisa/{result.FacturaId}", result);
     }
 
     [HttpPatch("{id}/aprobar")]

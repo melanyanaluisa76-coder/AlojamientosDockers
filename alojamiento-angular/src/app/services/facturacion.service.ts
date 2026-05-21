@@ -11,14 +11,14 @@ export class FacturacionService {
   private readonly base = environment.apiBaseUrl;
 
   procesarPago(req: PagoRequest): Observable<ApiResponse<PagoResponse>> {
-    return this.http.post<ApiResponse<PagoResponse>>(`${this.base}/pagos`, req);
+    return this.http.post<ApiResponse<PagoResponse>>(`${this.base}/pagosanaluisa`, req);
   }
 
   getPagosByReserva(reservaId: number): Observable<ApiResponse<PagoResponse[]>> {
-    return this.http.get<ApiResponse<PagoResponse[]>>(`${this.base}/pagos/por-reserva/${reservaId}`);
+    return this.http.get<ApiResponse<PagoResponse[]>>(`${this.base}/pagosanaluisa/por-reserva/${reservaId}`);
   }
 
   getFacturaByReserva(reservaId: number): Observable<ApiResponse<FacturaResponse>> {
-    return this.http.get<ApiResponse<FacturaResponse>>(`${this.base}/facturas/reserva/${reservaId}`);
+    return this.http.get<ApiResponse<FacturaResponse>>(`${this.base}/facturasanaluisa/reserva/${reservaId}`);
   }
 }

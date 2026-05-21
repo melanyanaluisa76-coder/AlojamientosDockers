@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Alojamientos.API.Controllers.V1;
 
 [ApiController]
-[Route("api/v1/[controller]")]
+[Route("api/v1/fotosanaluisa")]
 public class FotosController : ControllerBase
 {
     private readonly IFotosService _service;

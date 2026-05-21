@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Reservas.API.Controllers.V1;
 
 [ApiController]
-[Route("api/v1/[controller]")]
+[Route("api/v1/reservasanaluisa")]
 public class ReservasController : ControllerBase
 {
     private readonly IReservasService _service;
@@ -28,7 +28,7 @@ public class ReservasController : ControllerBase
     public async Task<IActionResult> CrearReserva([FromBody] CrearReservaRequest request)
     {
         var result = await _service.CrearAsync(request);
-        return Created($"/api/v1/reservas/{result.ReservaId}", result);
+        return Created($"/api/v1/reservasanaluisa/{result.ReservaId}", result);
     }
 
     [HttpPatch("{id}/estado")]

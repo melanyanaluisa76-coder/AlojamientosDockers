@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Alojamientos.API.Controllers.V1;
 
 [ApiController]
-[Route("api/v1/[controller]")]
+[Route("api/v1/calendarioanaluisa")]
 public class CalendarioController : ControllerBase
 {
     private readonly ICalendarioService _service;

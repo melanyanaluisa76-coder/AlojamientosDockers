@@ -16,11 +16,11 @@ export class AlojamientosService {
 
   // ── Maestros ─────────────────────────────────────────────────────────────
   getCiudades(): Observable<ApiResponse<Ciudad[]>> {
-    return this.http.get<ApiResponse<Ciudad[]>>(`${this.base}/maestros/ciudades`);
+    return this.http.get<ApiResponse<Ciudad[]>>(`${this.base}/maestrosanaluisa/ciudades`);
   }
 
   getTiposAlojamiento(): Observable<ApiResponse<TipoAlojamiento[]>> {
-    return this.http.get<ApiResponse<TipoAlojamiento[]>>(`${this.base}/maestros/tipos-alojamiento`);
+    return this.http.get<ApiResponse<TipoAlojamiento[]>>(`${this.base}/maestrosanaluisa/tipos-alojamiento`);
   }
 
   // ── Propiedades ──────────────────────────────────────────────────────────
@@ -34,37 +34,37 @@ export class AlojamientosService {
       });
     }
     return this.http.get<ApiResponse<PaginatedData<PropiedadItem>>>(
-      `${this.base}/propiedades/buscar`,
+      `${this.base}/propiedadesanaluisa/buscar`,
       { params: httpParams },
     );
   }
 
   getPropiedadById(id: number): Observable<ApiResponse<PropiedadItem>> {
-    return this.http.get<ApiResponse<PropiedadItem>>(`${this.base}/propiedades/${id}`);
+    return this.http.get<ApiResponse<PropiedadItem>>(`${this.base}/propiedadesanaluisa/${id}`);
   }
 
   getPropiedadesByColaborador(colaboradorId: number): Observable<ApiResponse<PropiedadItem[]>> {
-    return this.http.get<ApiResponse<PropiedadItem[]>>(`${this.base}/propiedades/colaborador/${colaboradorId}`);
+    return this.http.get<ApiResponse<PropiedadItem[]>>(`${this.base}/propiedadesanaluisa/colaborador/${colaboradorId}`);
   }
 
   crearPropiedad(req: CrearPropiedadRequest): Observable<ApiResponse<PropiedadItem>> {
-    return this.http.post<ApiResponse<PropiedadItem>>(`${this.base}/propiedades`, req);
+    return this.http.post<ApiResponse<PropiedadItem>>(`${this.base}/propiedadesanaluisa`, req);
   }
 
   cambiarEstadoPropiedad(id: number, nuevoEstado: string): Observable<ApiResponse<void>> {
-    return this.http.patch<ApiResponse<void>>(`${this.base}/propiedades/${id}/estado`, { nuevoEstado });
+    return this.http.patch<ApiResponse<void>>(`${this.base}/propiedadesanaluisa/${id}/estado`, { nuevoEstado });
   }
 
   // ── Habitaciones ─────────────────────────────────────────────────────────
   getHabitacionesByPropiedad(propiedadId: number): Observable<ApiResponse<HabitacionItem[]>> {
-    return this.http.get<ApiResponse<HabitacionItem[]>>(`${this.base}/habitaciones/por-propiedad/${propiedadId}`);
+    return this.http.get<ApiResponse<HabitacionItem[]>>(`${this.base}/habitacionesanaluisa/por-propiedad/${propiedadId}`);
   }
 
   crearHabitacion(req: CrearHabitacionRequest): Observable<ApiResponse<HabitacionItem>> {
-    return this.http.post<ApiResponse<HabitacionItem>>(`${this.base}/habitaciones`, req);
+    return this.http.post<ApiResponse<HabitacionItem>>(`${this.base}/habitacionesanaluisa`, req);
   }
 
   eliminarHabitacion(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.base}/habitaciones/${id}`);
+    return this.http.delete<void>(`${this.base}/habitacionesanaluisa/${id}`);
   }
 }

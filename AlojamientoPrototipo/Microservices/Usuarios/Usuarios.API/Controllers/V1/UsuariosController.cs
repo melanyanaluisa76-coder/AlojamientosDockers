@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Usuarios.API.Controllers.V1;
 
 [ApiController]
-[Route("api/v1/[controller]")]
+[Route("api/v1/usuariosanaluisa")]
 public class UsuariosController : ControllerBase
 {
     private readonly IUsuariosService _service;

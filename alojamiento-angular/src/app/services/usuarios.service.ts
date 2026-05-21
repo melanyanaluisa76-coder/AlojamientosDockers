@@ -13,40 +13,40 @@ export class UsuariosService {
 
   // ── Auth ─────────────────────────────────────────────────────────────────
   login(req: LoginRequest): Observable<ApiResponse<LoginResponse>> {
-    return this.http.post<ApiResponse<LoginResponse>>(`${this.base}/auth/login`, req);
+    return this.http.post<ApiResponse<LoginResponse>>(`${this.base}/authanaluisa/login`, req);
   }
 
   register(req: RegisterRequest): Observable<ApiResponse<unknown>> {
-    return this.http.post<ApiResponse<unknown>>(`${this.base}/clientes`, req);
+    return this.http.post<ApiResponse<unknown>>(`${this.base}/clientesanaluisa`, req);
   }
 
   // ── Gestión de usuarios (Admin) ──────────────────────────────────────────
   getUsuarios(): Observable<ApiResponse<UsuarioAdmin[]>> {
-    return this.http.get<ApiResponse<UsuarioAdmin[]>>(`${this.base}/auth/usuarios`);
+    return this.http.get<ApiResponse<UsuarioAdmin[]>>(`${this.base}/authanaluisa/usuarios`);
   }
 
   getRoles(): Observable<ApiResponse<Rol[]>> {
-    return this.http.get<ApiResponse<Rol[]>>(`${this.base}/auth/roles`);
+    return this.http.get<ApiResponse<Rol[]>>(`${this.base}/authanaluisa/roles`);
   }
 
   cambiarRol(userId: number, rolId: number): Observable<ApiResponse<void>> {
-    return this.http.patch<ApiResponse<void>>(`${this.base}/auth/usuarios/${userId}/rol`, { rolId });
+    return this.http.patch<ApiResponse<void>>(`${this.base}/authanaluisa/usuarios/${userId}/rol`, { rolId });
   }
 
   cambiarEstadoUsuario(userId: number, activo: boolean): Observable<ApiResponse<void>> {
-    return this.http.patch<ApiResponse<void>>(`${this.base}/auth/usuarios/${userId}/estado`, { activo });
+    return this.http.patch<ApiResponse<void>>(`${this.base}/authanaluisa/usuarios/${userId}/estado`, { activo });
   }
 
   // ── Colaboradores ────────────────────────────────────────────────────────
   getColaboradores(): Observable<ApiResponse<ColaboradorItem[]>> {
-    return this.http.get<ApiResponse<ColaboradorItem[]>>(`${this.base}/colaboradores`);
+    return this.http.get<ApiResponse<ColaboradorItem[]>>(`${this.base}/colaboradoresanaluisa`);
   }
 
   crearColaborador(req: CrearColaboradorRequest): Observable<ApiResponse<ColaboradorItem>> {
-    return this.http.post<ApiResponse<ColaboradorItem>>(`${this.base}/colaboradores`, req);
+    return this.http.post<ApiResponse<ColaboradorItem>>(`${this.base}/colaboradoresanaluisa`, req);
   }
 
   eliminarColaborador(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.base}/colaboradores/${id}`);
+    return this.http.delete<void>(`${this.base}/colaboradoresanaluisa/${id}`);
   }
 }

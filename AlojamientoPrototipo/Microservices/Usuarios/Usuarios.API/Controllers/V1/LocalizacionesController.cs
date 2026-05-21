@@ -5,7 +5,7 @@ using Usuarios.Business.Interfaces;
 namespace Usuarios.API.Controllers.V1;
 
 [ApiController]
-[Route("api/v1/[controller]")]
+[Route("api/v1/localizacionesanaluisa")]
 public class LocalizacionesController : ControllerBase
 {
     private readonly ILocalizacionesService _service;
@@ -31,7 +31,7 @@ public class LocalizacionesController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CrearLocalizacionRequest request)
     {
         var result = await _service.CrearAsync(request);
-        return Created($"/api/v1/localizaciones/{result.LocalizacionId}", result);
+        return Created($"/api/v1/localizacionesanaluisa/{result.LocalizacionId}", result);
     }
 
     [HttpDelete("{id}")]
