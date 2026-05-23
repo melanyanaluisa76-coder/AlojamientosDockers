@@ -22,3 +22,6 @@ appsettings.Development.json
 node_modules/
 
 *.bacpac
+
+## Credenciales y datos sensibles
+URLS_render_sopabase_swagger.txt
