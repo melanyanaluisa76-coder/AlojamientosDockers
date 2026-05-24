@@ -27,7 +27,7 @@ public class AlojamientosController : ControllerBase
     public async Task<IActionResult> Crear([FromBody] CrearAlojamientoRequest request)
     {
         var result = await _service.CrearAsync(request);
-        return CreatedAtAction(nameof(GetById), new { id = result.AlojamientoId }, result);
+        return Created($"/api/v1/alojamientosanaluisa/{result.AlojamientoId}", result);
     }
 
     [HttpPut("{id}")]

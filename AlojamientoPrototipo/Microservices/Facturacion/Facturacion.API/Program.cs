@@ -1,8 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Facturacion.DataAccess.Contexts;
+using Facturacion.DataAccess.Entities;
 using Facturacion.API.Extensions;
 using Facturacion.API.Middleware;
 using MassTransit;
+
+AppContext.SetSwitch("System.Net.PreferIPv4Stack", true);
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -63,5 +67,21 @@ app.UseCors();
 
 // Mapeo de Controladores
 app.MapControllers();
+
+// Seed de catálogos vacíos — FK constraint en producción
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<FacturacionDbContext>();
+    db.Database.EnsureCreated();
+    if (!db.MetodosPago.Any())
+    {
+        db.MetodosPago.AddRange(
+            new MetodoPagoClienteEntity { Tipo = "DEBITO" },
+            new MetodoPagoClienteEntity { Tipo = "CREDITO" },
+            new MetodoPagoClienteEntity { Tipo = "EnSitio" }
+        );
+        db.SaveChanges();
+    }
+}
 
 app.Run();

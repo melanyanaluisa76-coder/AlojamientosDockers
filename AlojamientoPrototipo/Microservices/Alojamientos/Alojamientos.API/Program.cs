@@ -1,7 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Alojamientos.DataAccess.Contexts;
+using Alojamientos.DataAccess.Entities;
 using Alojamientos.API.Extensions;
 using Alojamientos.API.Middleware;
+
+AppContext.SetSwitch("System.Net.PreferIPv4Stack", true);
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,5 +49,23 @@ app.MapControllers();
 app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true });
 app.MapGrpcService<Alojamientos.API.GrpcServices.CalendarioGrpcService>()
    .EnableGrpcWeb();
+
+// Seed de catálogos vacíos — FK constraint en producción
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AlojamientosDbContext>();
+    db.Database.EnsureCreated();
+    if (!db.TiposAlojamiento.Any())
+    {
+        db.TiposAlojamiento.AddRange(
+            new TipoAlojamientoEntity { Nombre = "Hotel",      Descripcion = "Hotel tradicional" },
+            new TipoAlojamientoEntity { Nombre = "Hostal",     Descripcion = "Hostal económico" },
+            new TipoAlojamientoEntity { Nombre = "Apartamento",Descripcion = "Apartamento turístico" },
+            new TipoAlojamientoEntity { Nombre = "Cabaña",     Descripcion = "Cabaña rural" },
+            new TipoAlojamientoEntity { Nombre = "Casa",       Descripcion = "Casa completa" }
+        );
+        db.SaveChanges();
+    }
+}
 
 app.Run();
