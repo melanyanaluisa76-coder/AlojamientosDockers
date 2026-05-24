@@ -7,7 +7,7 @@ openapi: 3.0.3
 #  Autora:   Melany Analuisa
 #
 #  IMPORTANTE PARA EL EQUIPO DE BOOKING:
-#    - Servidor único de entrada: https://apigateway-mr.onrender.com
+#    - Servidor único de entrada: https://alojamientosapigateway.onrender.com
 #    - Prefijo de integración: /api/v1/naomy-analuisa/
 #    - El gateway redirige internamente cada ruta al microservicio correcto.
 #    - No llamar directamente a los microservicios.
