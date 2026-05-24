@@ -620,7 +620,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"reservaId\": {{reservaId}},\n  \"metodoPagoId\": 1,\n  \"referenciaPago\": \"TXN-POSTMAN-001\"\n}"
+              "raw": "{\n  \"reservaId\": {{reservaId}},\n  \"metodoPagoId\": 1,\n  \"monto\": 375.00,\n  \"detalles\": [\n    {\n      \"descripcion\": \"Pago de 5 noches - Habitacion Doble\",\n      \"cantidad\": 1,\n      \"precioUnitario\": 375.00\n    }\n  ]\n}"
             },
             "url": {
               "raw": "{{facturacion_url}}/api/v1/facturasanaluisa",
