@@ -2,8 +2,8 @@ openapi: 3.0.3
 
 # ════════════════════════════════════════════════════════════════════
 #  AlojamientoMR — Contrato Oficial de Integración con Booking
-#  Versión:  3.0.0
-#  Fecha:    2026-05-20
+#  Versión:  3.1.0
+#  Fecha:    2026-05-23
 #  Autora:   Melany Analuisa
 #
 #  IMPORTANTE PARA EL EQUIPO DE BOOKING:
@@ -99,13 +99,13 @@ info:
     | `/api/v1/naomy-analuisa/facturas/**`            | Facturacion.API              |
     | `/api/v1/naomy-analuisa/metodospago`            | Facturacion.API              |
 
-  version: 3.0.0
+  version: 3.1.0
   contact:
     name: Equipo AlojamientoMR — Melany Analuisa
     email: melanyanaluisa76@gmail.com
 
 servers:
-  - url: https://apigateway-mr.onrender.com
+  - url: https://alojamientosapigateway.onrender.com
     description: Producción — API Gateway (YARP en Render)
   - url: http://localhost:5001
     description: Desarrollo Local — API Gateway
@@ -1072,7 +1072,11 @@ paths:
             example:
               reservaId: 55
               metodoPagoId: 1
-              referenciaPago: "TXN-20260701-001"
+              monto: 600.00
+              detalles:
+                - descripcion: "Pago de 4 noches - Suite Presidencial"
+                  cantidad: 1
+                  precioUnitario: 600.00
       responses:
         '201':
           description: Factura creada con éxito
@@ -1722,20 +1726,54 @@ components:
 
     CrearFacturaRequest:
       type: object
-      required: [reservaId, metodoPagoId]
+      required: [reservaId, monto, detalles]
       properties:
         reservaId:
           type: integer
           example: 55
         metodoPagoId:
           type: integer
-          description: "1=CREDITO, 2=DEBITO, 3=EnSitio"
-          example: 1
-        referenciaPago:
-          type: string
           nullable: true
-          description: Número de transacción bancaria. Omitir para EnSitio.
-          example: "TXN-20260701-001"
+          description: "1=CREDITO, 2=DEBITO, 3=EnSitio. Omitir para pago en sitio."
+          example: 1
+        monto:
+          type: number
+          format: double
+          minimum: 0.01
+          description: Monto total del pago. Debe ser mayor a 0.
+          example: 600.00
+        fechaPago:
+          type: string
+          format: date-time
+          nullable: true
+          description: Fecha y hora del pago. Si se omite, se usa la fecha actual.
+          example: null
+        detalles:
+          type: array
+          minItems: 1
+          description: Al menos un ítem de detalle es obligatorio.
+          items:
+            $ref: '#/components/schemas/CrearDetalleFacturaRequest'
+
+    CrearDetalleFacturaRequest:
+      type: object
+      required: [descripcion, cantidad, precioUnitario]
+      properties:
+        descripcion:
+          type: string
+          maxLength: 200
+          description: Descripción del concepto facturado.
+          example: "Pago de 4 noches - Suite Presidencial"
+        cantidad:
+          type: integer
+          minimum: 1
+          maximum: 100
+          example: 1
+        precioUnitario:
+          type: number
+          format: double
+          minimum: 0.01
+          example: 600.00
 
     MetodoPagoDto:
       type: object
