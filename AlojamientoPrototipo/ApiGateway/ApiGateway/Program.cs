@@ -23,14 +23,11 @@ var app = builder.Build();
 
 app.UseCors("AllowAll");
 
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Public API Gateway v1");
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Public API Gateway v1");
+});
 
 // Estos endpoints son puramente para generar el Swagger con el contrato público requerido.
 // YARP interceptará la llamada real y la enviará al microservicio correspondiente.
