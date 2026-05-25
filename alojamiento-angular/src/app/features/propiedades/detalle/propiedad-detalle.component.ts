@@ -1,4 +1,5 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DecimalPipe, CurrencyPipe } from '@angular/common';
@@ -51,10 +52,14 @@ export class PropiedadDetalleComponent implements OnInit {
     llevaMascotas: [false],
   });
 
+  private readonly formValues = toSignal(this.bookingForm.valueChanges, {
+    initialValue: this.bookingForm.getRawValue(),
+  });
+
   readonly nightCount = computed(() => {
-    const { fechaCheckIn, fechaCheckOut } = this.bookingForm.getRawValue();
-    if (!fechaCheckIn || !fechaCheckOut) return 0;
-    const diff = new Date(fechaCheckOut).getTime() - new Date(fechaCheckIn).getTime();
+    const v = this.formValues();
+    if (!v.fechaCheckIn || !v.fechaCheckOut) return 0;
+    const diff = new Date(v.fechaCheckOut).getTime() - new Date(v.fechaCheckIn).getTime();
     return Math.max(0, Math.ceil(diff / 86_400_000));
   });
 
