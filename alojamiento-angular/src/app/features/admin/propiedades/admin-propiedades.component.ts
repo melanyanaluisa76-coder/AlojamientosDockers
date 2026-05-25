@@ -8,13 +8,19 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatDialog } from '@angular/material/dialog';
 import { AlojamientosService } from '../../../services/alojamientos.service';
 import { AuthStore } from '../../../core/store/auth.store';
 import { NotificationService } from '../../../core/services/notification.service';
-import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
-import { PropiedadItem, Ciudad, TipoAlojamiento } from '../../../core/models/alojamiento.model';
+import { PropiedadItem } from '../../../core/models/alojamiento.model';
+
+const TIPOS_ALOJAMIENTO = [
+  { id: 1, nombre: 'Hotel' },
+  { id: 2, nombre: 'Hostal' },
+  { id: 3, nombre: 'Apartamento' },
+  { id: 4, nombre: 'Cabaña' },
+  { id: 5, nombre: 'Casa' },
+];
 
 @Component({
   selector: 'app-admin-propiedades',
@@ -32,100 +38,63 @@ export class AdminPropiedadesComponent implements OnInit {
   private readonly svc    = inject(AlojamientosService);
   private readonly auth   = inject(AuthStore);
   private readonly notify = inject(NotificationService);
-  private readonly dialog = inject(MatDialog);
   private readonly fb     = inject(FormBuilder);
 
-  readonly propiedades = signal<PropiedadItem[]>([]);
-  readonly ciudades    = signal<Ciudad[]>([]);
-  readonly tipos       = signal<TipoAlojamiento[]>([]);
-  readonly loading     = signal(true);
-  readonly submitting  = signal(false);
-  readonly showForm    = signal(false);
+  readonly propiedades   = signal<PropiedadItem[]>([]);
+  readonly tiposAlojamiento = TIPOS_ALOJAMIENTO;
+  readonly loading       = signal(true);
+  readonly submitting    = signal(false);
+  readonly showForm      = signal(false);
 
   readonly propForm = this.fb.group({
     nombre:            ['', [Validators.required, Validators.minLength(3)]],
-    descripcion:       ['', Validators.required],
+    descripcion:       [''],
+    ciudad:            [''],
     direccion:         ['', Validators.required],
-    ciudadId:          [null as number | null, Validators.required],
     tipoAlojamientoId: [null as number | null, Validators.required],
-    estrellas:         [3, [Validators.required, Validators.min(1), Validators.max(5)]],
+    socioId:           [null as number | null, Validators.required],
     admiteMascotas:    [false],
+    tienePiscina:      [false],
+    tieneParqueadero:  [false],
   });
 
   ngOnInit(): void {
-    this.svc.getCiudades().subscribe({ next: r => this.ciudades.set(r.datos ?? []) });
-    this.svc.getTiposAlojamiento().subscribe({ next: r => this.tipos.set(r.datos ?? []) });
     this.cargar();
   }
 
   cargar(): void {
     this.loading.set(true);
-    const colaboradorId = this.auth.user()?.colaboradorId;
-    if (colaboradorId && !this.auth.isAdmin()) {
-      this.svc.getPropiedadesByColaborador(colaboradorId).subscribe({
-        next: r => this.propiedades.set(r.datos ?? []),
-        complete: () => this.loading.set(false),
-        error: () => this.loading.set(false),
-      });
-    } else {
-      this.svc.buscarPropiedades({ PageSize: 200 }).subscribe({
-        next: r => {
-          const d = r.datos;
-          this.propiedades.set(d?.items ?? []);
-        },
-        complete: () => this.loading.set(false),
-        error: () => this.loading.set(false),
-      });
-    }
+    this.svc.getAlojamientos().subscribe({
+      next: r => this.propiedades.set(r.data ?? []),
+      complete: () => this.loading.set(false),
+      error: () => this.loading.set(false),
+    });
   }
 
   guardar(): void {
     if (this.propForm.invalid) { this.propForm.markAllAsTouched(); return; }
-    const colaboradorId = this.auth.user()?.colaboradorId;
-    if (!colaboradorId) { this.notify.error('No se encontró el perfil de colaborador.'); return; }
 
     const raw = this.propForm.getRawValue();
     this.submitting.set(true);
-    this.svc.crearPropiedad({
+    this.svc.crearAlojamiento({
       nombre:            raw.nombre!,
-      descripcion:       raw.descripcion!,
+      descripcion:       raw.descripcion || undefined,
+      ciudad:            raw.ciudad || undefined,
       direccion:         raw.direccion!,
-      ciudadId:          raw.ciudadId!,
       tipoAlojamientoId: raw.tipoAlojamientoId!,
-      estrellas:         raw.estrellas!,
+      socioId:           raw.socioId!,
       admiteMascotas:    raw.admiteMascotas ?? false,
-      colaboradorId,
+      tienePiscina:      raw.tienePiscina ?? false,
+      tieneParqueadero:  raw.tieneParqueadero ?? false,
     }).subscribe({
       next: r => {
-        this.propiedades.update(list => [r.datos, ...list]);
+        this.propiedades.update(list => [r.data, ...list]);
         this.notify.success('Propiedad creada correctamente.');
-        this.propForm.reset({ estrellas: 3, admiteMascotas: false });
+        this.propForm.reset({ admiteMascotas: false, tienePiscina: false, tieneParqueadero: false });
         this.showForm.set(false);
       },
       error: () => this.submitting.set(false),
       complete: () => this.submitting.set(false),
-    });
-  }
-
-  toggleEstado(p: PropiedadItem): void {
-    const nuevoEstado = p.estado === 'Activa' ? 'Inactiva' : 'Activa';
-    const ref = this.dialog.open(ConfirmDialogComponent, {
-      data: {
-        title: `${nuevoEstado === 'Activa' ? 'Activar' : 'Desactivar'} propiedad`,
-        message: `¿Confirmas cambiar el estado de "${p.nombre}" a ${nuevoEstado}?`,
-        confirmLabel: 'Sí, cambiar',
-      },
-    });
-    ref.afterClosed().subscribe(ok => {
-      if (!ok) return;
-      this.svc.cambiarEstadoPropiedad(p.propiedadId, nuevoEstado).subscribe({
-        next: () => {
-          this.propiedades.update(list =>
-            list.map(x => x.propiedadId === p.propiedadId ? { ...x, estado: nuevoEstado } : x),
-          );
-          this.notify.success('Estado actualizado.');
-        },
-      });
     });
   }
 

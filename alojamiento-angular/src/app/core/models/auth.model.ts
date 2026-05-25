@@ -22,10 +22,12 @@ export interface AuthUser {
 }
 
 export interface RegisterRequest {
-  nombreCompleto: string;
   email: string;
   password: string;
-  telefono?: string | null;
+  nombreCompleto: string;
+  cedula: string;
+  telefono: string;
+  domicilio: string;
 }
 
 export interface UsuarioAdmin {

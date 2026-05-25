@@ -14,36 +14,6 @@
       <input matInput formControlName="nombre" placeholder="Nombre de la propiedad..." />
     </mat-form-field>
 
-    <mat-form-field appearance="outline" class="filter-field">
-      <mat-label>Ciudad</mat-label>
-      <mat-select formControlName="CiudadId">
-        <mat-option [value]="null">Cualquier ciudad</mat-option>
-        @for (c of ciudades(); track c.ciudadId) {
-          <mat-option [value]="c.ciudadId">{{ c.nombre }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="filter-field">
-      <mat-label>Estrellas mínimas</mat-label>
-      <mat-select formControlName="EstrellasMinimas">
-        <mat-option [value]="null">Cualquiera</mat-option>
-        <mat-option [value]="3">3+ Estrellas</mat-option>
-        <mat-option [value]="4">4+ Estrellas</mat-option>
-        <mat-option [value]="5">5 Estrellas</mat-option>
-      </mat-select>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="filter-field-sm">
-      <mat-label>Check-in</mat-label>
-      <input matInput type="date" formControlName="FechaCheckIn" />
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="filter-field-sm">
-      <mat-label>Check-out</mat-label>
-      <input matInput type="date" formControlName="FechaCheckOut" />
-    </mat-form-field>
-
     <div class="filter-actions">
       <mat-checkbox formControlName="AdmiteMascotas" color="primary">
         Pet Friendly
@@ -69,8 +39,8 @@
     </div>
   } @else {
     <div class="prop-grid">
-      @for (p of filtered(); track p.propiedadId) {
-        <a [routerLink]="['/propiedades', p.propiedadId]" class="prop-card">
+      @for (p of filtered(); track p.alojamientoId) {
+        <a [routerLink]="['/propiedades', p.alojamientoId]" class="prop-card">
           <div class="prop-img">
             <mat-icon class="prop-icon">apartment</mat-icon>
             <span class="prop-city-label">{{ p.ciudad }}</span>
@@ -86,7 +56,7 @@
             <div class="prop-meta">
               <div class="stars">
                 @for (i of stars(5); track i) {
-                  <mat-icon [class.filled]="i < p.estrellas">star</mat-icon>
+                  <mat-icon [class.filled]="i < (p.estrellas ?? 0)">star</mat-icon>
                 }
               </div>
               @if (p.calificacionPromedio) {

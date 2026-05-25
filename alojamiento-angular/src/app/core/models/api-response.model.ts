@@ -1,8 +1,8 @@
 export interface ApiResponse<T> {
-  datos: T;
-  mensaje?: string;
-  errores?: string[];
-  exitoso?: boolean;
+  data: T;
+  message?: string | null;
+  errors?: string[];
+  success?: boolean;
 }
 
 export interface PaginatedData<T> {

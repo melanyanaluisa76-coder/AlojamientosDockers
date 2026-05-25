@@ -46,13 +46,13 @@ export class LoginComponent {
     const { email, password } = this.form.getRawValue();
     this.svc.login({ email: email!, password: password! }).subscribe({
       next: res => {
-        this.authStore.login(res.datos);
-        this.notify.success(`¡Bienvenido, ${res.datos.nombreCompleto}!`);
+        this.authStore.login(res.data);
+        this.notify.success(`¡Bienvenido, ${res.data.nombreCompleto}!`);
         const target = this.authStore.hasAdminAccess() ? '/admin' : '/propiedades';
         this.router.navigate([target]);
       },
       error: err => {
-        const msg = err.error?.mensaje ?? 'Credenciales inválidas.';
+        const msg = err.error?.message ?? 'Credenciales inválidas.';
         this.notify.error(msg);
         this.loading.set(false);
       },

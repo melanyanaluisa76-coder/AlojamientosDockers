@@ -1,28 +1,31 @@
-export type TipoPago = 'Tarjeta' | 'EnSitio';
-
-export interface PagoRequest {
-  reservaId: number;
-  monto: number;
-  monedaId: number;
-  tipoPago: TipoPago;
-  referenciaPago: string;
+export interface CrearDetalleFacturaRequest {
+  descripcion: string;
+  cantidad: number;
+  precioUnitario: number;
 }
 
-export interface PagoResponse {
-  pagoId: number;
+export interface CrearFacturaRequest {
   reservaId: number;
+  metodoPagoId?: number | null;
   monto: number;
-  tipoPago: string;
-  referenciaPago?: string;
-  referenciaExterna?: string;
-  fechaPago: string;
+  fechaPago?: string | null;
+  detalles: CrearDetalleFacturaRequest[];
 }
 
 export interface FacturaResponse {
   facturaId: number;
   reservaId: number;
   codigoReserva?: string;
-  total: number;
+  monto: number;
+  moneda?: string;
+  metodoPago?: string;
   estado: string;
-  fechaEmision: string;
+  referenciaPago?: string | null;
+  fechaPago?: string | null;
+  fechaCreacion?: string;
+}
+
+export interface MetodoPagoItem {
+  metodoPagoId: number;
+  tipo: string;
 }

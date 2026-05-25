@@ -32,7 +32,7 @@ export class MisReservasComponent implements OnInit {
     if (!clienteId) { this.loading.set(false); return; }
 
     this.svc.getReservasByCliente(clienteId).subscribe({
-      next: r => this.reservas.set(r.datos ?? []),
+      next: r => this.reservas.set(r.data ?? []),
       complete: () => this.loading.set(false),
       error: () => this.loading.set(false),
     });

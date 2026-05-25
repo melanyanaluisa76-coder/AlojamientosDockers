@@ -1,38 +1,43 @@
+export interface DetalleHabitacionDto {
+  detalleId?: number;
+  habitacionId: number;
+  precioPorNoche: number;
+  numNoches: number;
+  subTotalHabitacion?: number;
+}
+
 export interface ReservaResponse {
   reservaId: number;
   codigoReserva: string;
   clienteId: number;
-  nombreCliente?: string;
   alojamientoId?: number;
-  propiedadId?: number;
-  nombrePropiedad?: string;
+  nombreCliente?: string;
   fechaCheckIn: string;
   fechaCheckOut: string;
   numAdultos: number;
   numNinos: number;
-  numHabitaciones: number;
   llevaMascotas?: boolean;
-  estado: string;
-  subTotal: number;
+  numHabitaciones?: number;
+  subTotal?: number;
   total: number;
-  descuento?: number;
-  nochesTotal?: number;
+  moneda?: string;
+  estado: string;
+  fechaCreacion?: string;
+  detallesHabitacion?: DetalleHabitacionDto[];
+  codigoDescuentoAplicado?: string | null;
+  porcentajeDescuento?: number | null;
 }
 
 export interface CrearReservaRequest {
   clienteId: number;
-  propiedadId?: number;
-  alojamientoId?: number;
-  habitacionIds?: number[];
-  habitaciones?: DetalleHabitacionRequest[];
+  alojamientoId: number;
   fechaCheckIn: string;
   fechaCheckOut: string;
   numAdultos: number;
   numNinos: number;
   llevaMascotas: boolean;
-  monedaId?: number;
-  metodoPagoId?: number;
-  codigoDescuento?: string;
+  codigoDescuento?: string | null;
+  habitaciones: DetalleHabitacionRequest[];
 }
 
 export interface DetalleHabitacionRequest {

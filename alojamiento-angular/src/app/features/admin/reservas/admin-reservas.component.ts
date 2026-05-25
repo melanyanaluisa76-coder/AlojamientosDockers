@@ -60,8 +60,8 @@ export class AdminReservasComponent implements OnInit {
 
   cargar(): void {
     this.loading.set(true);
-    this.svc.getTodasLasReservas().subscribe({
-      next: r => this.reservas.set(r.datos ?? []),
+    this.svc.getResumenByCliente(0).subscribe({
+      next: r => this.reservas.set(r.data ?? []),
       complete: () => this.loading.set(false),
       error: () => this.loading.set(false),
     });

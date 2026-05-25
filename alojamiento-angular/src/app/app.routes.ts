@@ -34,12 +34,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/reservas/mis-reservas/mis-reservas.component').then(m => m.MisReservasComponent),
       },
       {
-        path: 'checkout/:codigo',
+        path: 'checkout/:id',
         canActivate: [authGuard],
         loadComponent: () => import('./features/reservas/checkout/checkout.component').then(m => m.CheckoutComponent),
       },
       {
-        path: 'factura/:codigo',
+        path: 'factura/:id',
         canActivate: [authGuard],
         loadComponent: () => import('./features/reservas/factura/factura.component').then(m => m.FacturaComponent),
       },

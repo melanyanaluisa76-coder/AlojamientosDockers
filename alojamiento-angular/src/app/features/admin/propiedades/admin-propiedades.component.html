@@ -30,25 +30,22 @@
           <mat-label>Dirección</mat-label>
           <mat-icon matPrefix>place</mat-icon>
           <input matInput formControlName="direccion" />
+          @if (propForm.get('direccion')?.hasError('required') && propForm.get('direccion')?.touched) {
+            <mat-error>La dirección es obligatoria.</mat-error>
+          }
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Ciudad</mat-label>
-          <mat-select formControlName="ciudadId">
-            @for (c of ciudades(); track c.ciudadId) {
-              <mat-option [value]="c.ciudadId">{{ c.nombre }}</mat-option>
-            }
-          </mat-select>
-          @if (propForm.get('ciudadId')?.hasError('required') && propForm.get('ciudadId')?.touched) {
-            <mat-error>Selecciona una ciudad.</mat-error>
-          }
+          <mat-icon matPrefix>location_city</mat-icon>
+          <input matInput formControlName="ciudad" placeholder="Quito" />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Tipo de Alojamiento</mat-label>
           <mat-select formControlName="tipoAlojamientoId">
-            @for (t of tipos(); track t.tipoAlojamientoId) {
-              <mat-option [value]="t.tipoAlojamientoId">{{ t.nombre }}</mat-option>
+            @for (t of tiposAlojamiento; track t.id) {
+              <mat-option [value]="t.id">{{ t.nombre }}</mat-option>
             }
           </mat-select>
           @if (propForm.get('tipoAlojamientoId')?.hasError('required') && propForm.get('tipoAlojamientoId')?.touched) {
@@ -57,16 +54,18 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>Estrellas</mat-label>
-          <mat-select formControlName="estrellas">
-            @for (i of [1,2,3,4,5]; track i) {
-              <mat-option [value]="i">{{ i }} ★</mat-option>
-            }
-          </mat-select>
+          <mat-label>ID de Socio (propietario)</mat-label>
+          <mat-icon matPrefix>person</mat-icon>
+          <input matInput type="number" formControlName="socioId" placeholder="1" />
+          @if (propForm.get('socioId')?.hasError('required') && propForm.get('socioId')?.touched) {
+            <mat-error>El ID de socio es obligatorio.</mat-error>
+          }
         </mat-form-field>
 
-        <div class="form-check-row">
+        <div class="form-check-row span-2">
           <mat-checkbox formControlName="admiteMascotas" color="primary">Admite mascotas</mat-checkbox>
+          <mat-checkbox formControlName="tienePiscina" color="primary">Tiene piscina</mat-checkbox>
+          <mat-checkbox formControlName="tieneParqueadero" color="primary">Tiene parqueadero</mat-checkbox>
         </div>
 
         <div class="form-actions span-2">
@@ -96,28 +95,19 @@
               <th>Nombre</th>
               <th>Ciudad</th>
               <th>Tipo</th>
-              <th>Estrellas</th>
               <th>Estado</th>
               <th>Pet-Friendly</th>
-              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            @for (p of propiedades(); track p.propiedadId) {
+            @for (p of propiedades(); track p.alojamientoId) {
               <tr>
                 <td class="font-semibold">{{ p.nombre }}</td>
                 <td>{{ p.ciudad ?? '—' }}</td>
-                <td>{{ p.tipoAlojamiento ?? '—' }}</td>
+                <td>{{ p.tipoAlojamientoNombre ?? '—' }}</td>
                 <td>
-                  <div class="stars-inline">
-                    @for (i of stars(5); track i) {
-                      <mat-icon class="star-sm" [class.filled]="i < p.estrellas">star</mat-icon>
-                    }
-                  </div>
-                </td>
-                <td>
-                  <span class="badge" [class]="p.estado === 'Activa' ? 'badge-success' : 'badge-danger'">
-                    {{ p.estado ?? 'Activa' }}
+                  <span class="badge" [class]="p.estado === 'Activo' ? 'badge-success' : 'badge-danger'">
+                    {{ p.estado ?? 'Activo' }}
                   </span>
                 </td>
                 <td>
@@ -126,11 +116,6 @@
                   } @else {
                     <span class="badge badge-danger">No</span>
                   }
-                </td>
-                <td>
-                  <button mat-icon-button (click)="toggleEstado(p)" [matTooltip]="p.estado === 'Activa' ? 'Desactivar' : 'Activar'">
-                    <mat-icon>{{ p.estado === 'Activa' ? 'toggle_on' : 'toggle_off' }}</mat-icon>
-                  </button>
                 </td>
               </tr>
             }

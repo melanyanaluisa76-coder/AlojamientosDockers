@@ -15,8 +15,8 @@
       <mat-label>Selecciona una propiedad</mat-label>
       <mat-icon matPrefix>apartment</mat-icon>
       <mat-select [value]="selectedProp()" (selectionChange)="seleccionarPropiedad($event.value)">
-        @for (p of propiedades(); track p.propiedadId) {
-          <mat-option [value]="p.propiedadId">{{ p.nombre }}</mat-option>
+        @for (p of propiedades(); track p.alojamientoId) {
+          <mat-option [value]="p.alojamientoId">{{ p.nombre }}</mat-option>
         }
       </mat-select>
     </mat-form-field>

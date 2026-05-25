@@ -24,12 +24,6 @@
               <span>Código</span>
               <strong class="mono">{{ reserva()!.codigoReserva }}</strong>
             </div>
-            @if (reserva()!.nombrePropiedad) {
-              <div class="summary-row">
-                <span>Propiedad</span>
-                <strong>{{ reserva()!.nombrePropiedad }}</strong>
-              </div>
-            }
             <div class="summary-row">
               <span>Check-in</span>
               <strong>{{ reserva()!.fechaCheckIn | date:'dd/MM/yyyy' }}</strong>
@@ -38,33 +32,25 @@
               <span>Check-out</span>
               <strong>{{ reserva()!.fechaCheckOut | date:'dd/MM/yyyy' }}</strong>
             </div>
-            @if (reserva()!.nochesTotal) {
-              <div class="summary-row">
-                <span>Noches</span>
-                <strong>{{ reserva()!.nochesTotal }}</strong>
-              </div>
-            }
             <div class="summary-row">
               <span>Huéspedes</span>
               <strong>{{ reserva()!.numAdultos }} adulto(s)@if ((reserva()!.numNinos ?? 0) > 0) {, {{ reserva()!.numNinos }} niño(s)}</strong>
             </div>
-            <div class="summary-row">
-              <span>Habitaciones</span>
-              <strong>{{ reserva()!.numHabitaciones }}</strong>
-            </div>
+            @if ((reserva()!.numHabitaciones ?? 0) > 0) {
+              <div class="summary-row">
+                <span>Habitaciones</span>
+                <strong>{{ reserva()!.numHabitaciones }}</strong>
+              </div>
+            }
           </div>
 
           <mat-divider />
 
           <div class="total-block">
-            @if (reserva()!.descuento && (reserva()!.descuento ?? 0) > 0) {
+            @if ((reserva()!.subTotal ?? 0) > 0 && reserva()!.subTotal !== reserva()!.total) {
               <div class="summary-row subtotal-row">
                 <span>Subtotal</span>
                 <span>{{ reserva()!.subTotal | currency:'USD':'symbol':'1.2-2' }}</span>
-              </div>
-              <div class="summary-row discount-row">
-                <span>Descuento</span>
-                <span class="discount-text">-{{ reserva()!.descuento }}%</span>
               </div>
             }
             <div class="summary-row total-row">
@@ -85,46 +71,21 @@
 
           <form [formGroup]="payForm" (ngSubmit)="pagar()" class="pay-form">
 
-            <mat-radio-group formControlName="tipoPago" class="tipo-pago-group" color="primary">
-              <label class="tipo-option" [class.selected]="tipoPago === 'Tarjeta'">
-                <mat-radio-button value="Tarjeta">
-                  <div class="tipo-label">
-                    <mat-icon>credit_card</mat-icon>
-                    <span>Tarjeta de crédito / débito</span>
-                  </div>
-                </mat-radio-button>
-              </label>
-              <label class="tipo-option" [class.selected]="tipoPago === 'EnSitio'">
-                <mat-radio-button value="EnSitio">
-                  <div class="tipo-label">
-                    <mat-icon>store</mat-icon>
-                    <span>Pago en sitio</span>
-                  </div>
-                </mat-radio-button>
-              </label>
-            </mat-radio-group>
-
-            @if (tipoPago === 'Tarjeta') {
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Referencia de pago (últimos 4 dígitos o token)</mat-label>
-                <mat-icon matPrefix>credit_card</mat-icon>
-                <input matInput formControlName="referenciaPago" placeholder="Ej: **** **** **** 4242" />
-                @if (payForm.get('referenciaPago')?.hasError('required') && payForm.get('referenciaPago')?.touched) {
-                  <mat-error>La referencia de pago es obligatoria.</mat-error>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Selecciona método de pago</mat-label>
+              <mat-select formControlName="metodoPagoId">
+                @for (m of metodosPago(); track m.metodoPagoId) {
+                  <mat-option [value]="m.metodoPagoId">{{ m.tipo }}</mat-option>
                 }
-              </mat-form-field>
-            }
-
-            @if (tipoPago === 'EnSitio') {
-              <div class="info-notice">
-                <mat-icon>info</mat-icon>
-                <p>Tu reserva quedará registrada. El pago se efectuará al momento del check-in en el alojamiento.</p>
-              </div>
-            }
+              </mat-select>
+              @if (payForm.get('metodoPagoId')?.hasError('required') && payForm.get('metodoPagoId')?.touched) {
+                <mat-error>Selecciona un método de pago.</mat-error>
+              }
+            </mat-form-field>
 
             <div class="secure-notice">
               <mat-icon>lock</mat-icon>
-              <span>Transacción segura con clave de idempotencia anti-duplicado.</span>
+              <span>Transacción segura y registrada.</span>
             </div>
 
             <button

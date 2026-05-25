@@ -32,9 +32,32 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Teléfono (opcional)</mat-label>
-          <mat-icon matPrefix>phone_outline</mat-icon>
-          <input matInput formControlName="telefono" placeholder="+593 99 123 4567" />
+          <mat-label>Cédula</mat-label>
+          <mat-icon matPrefix>badge</mat-icon>
+          <input matInput formControlName="cedula" placeholder="1712345678" maxlength="10" />
+          @if (form.get('cedula')?.hasError('required') && form.get('cedula')?.touched) {
+            <mat-error>La cédula es obligatoria.</mat-error>
+          } @else if (form.get('cedula')?.hasError('pattern') && form.get('cedula')?.touched) {
+            <mat-error>La cédula debe tener exactamente 10 dígitos.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Teléfono</mat-label>
+          <mat-icon matPrefix>phone</mat-icon>
+          <input matInput formControlName="telefono" placeholder="0991234567" />
+          @if (form.get('telefono')?.hasError('required') && form.get('telefono')?.touched) {
+            <mat-error>El teléfono es obligatorio.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Domicilio</mat-label>
+          <mat-icon matPrefix>home</mat-icon>
+          <input matInput formControlName="domicilio" placeholder="Av. Principal 123, Quito" />
+          @if (form.get('domicilio')?.hasError('required') && form.get('domicilio')?.touched) {
+            <mat-error>El domicilio es obligatorio.</mat-error>
+          }
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">

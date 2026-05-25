@@ -9,17 +9,6 @@
       <div class="search-card">
         <form [formGroup]="searchForm" (ngSubmit)="search()" class="search-form">
           <mat-form-field appearance="outline" class="search-field">
-            <mat-label>Destino</mat-label>
-            <mat-icon matPrefix>location_on</mat-icon>
-            <input matInput formControlName="ciudadText" placeholder="¿A dónde vas?" list="ciudades-list" />
-            <datalist id="ciudades-list">
-              @for (c of ciudades(); track c.ciudadId) {
-                <option [value]="c.nombre">{{ c.nombre }}, {{ c.pais }}</option>
-              }
-            </datalist>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="search-field-date">
             <mat-label>Check-in</mat-label>
             <mat-icon matPrefix>event</mat-icon>
             <input matInput type="date" formControlName="checkIn" />
@@ -59,8 +48,8 @@
     </div>
   } @else {
     <div class="prop-grid">
-      @for (p of destacadas(); track p.propiedadId) {
-        <a [routerLink]="['/propiedades', p.propiedadId]" class="prop-card">
+      @for (p of destacadas(); track p.alojamientoId) {
+        <a [routerLink]="['/propiedades', p.alojamientoId]" class="prop-card">
           <div class="prop-image">
             <mat-icon class="prop-placeholder-icon">apartment</mat-icon>
             <span class="prop-city">{{ p.ciudad }}</span>
@@ -76,7 +65,7 @@
             <div class="prop-footer">
               <div class="stars">
                 @for (i of stars(5); track i) {
-                  <mat-icon [class.star-filled]="i < p.estrellas">star</mat-icon>
+                  <mat-icon [class.star-filled]="i < (p.estrellas ?? 0)">star</mat-icon>
                 }
               </div>
               <span class="btn-ver">Ver Detalle →</span>

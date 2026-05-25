@@ -48,14 +48,14 @@ export class AdminUsuariosComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.svc.getRoles().subscribe({ next: r => this.roles.set(r.datos ?? []) });
+    this.svc.getRoles().subscribe({ next: r => this.roles.set(r.data ?? []) });
     this.cargar();
   }
 
   cargar(): void {
     this.loading.set(true);
     this.svc.getUsuarios().subscribe({
-      next: r => this.usuarios.set(r.datos ?? []),
+      next: r => this.usuarios.set(r.data ?? []),
       complete: () => this.loading.set(false),
       error: () => this.loading.set(false),
     });

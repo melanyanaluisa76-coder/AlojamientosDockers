@@ -35,8 +35,8 @@
           <h2 class="factura-title">FACTURA</h2>
           @if (factura()) {
             <p class="factura-id">#{{ factura()!.facturaId }}</p>
-            <p class="factura-fecha">{{ factura()!.fechaEmision | date:'dd/MM/yyyy HH:mm' }}</p>
-            <span class="badge" [class]="factura()!.estado === 'Pagada' ? 'badge-success' : 'badge-warning'">
+            <p class="factura-fecha">{{ factura()!.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</p>
+            <span class="badge" [class]="factura()!.estado === 'Aprobado' ? 'badge-success' : 'badge-warning'">
               {{ factura()!.estado }}
             </span>
           }
@@ -53,12 +53,6 @@
             <span class="detail-label">Código de reserva</span>
             <span class="detail-value mono">{{ reserva()!.codigoReserva }}</span>
           </div>
-          @if (reserva()!.nombrePropiedad) {
-            <div class="detail-item">
-              <span class="detail-label">Propiedad</span>
-              <span class="detail-value">{{ reserva()!.nombrePropiedad }}</span>
-            </div>
-          }
           <div class="detail-item">
             <span class="detail-label">Check-in</span>
             <span class="detail-value">{{ reserva()!.fechaCheckIn | date:'dd/MM/yyyy' }}</span>
@@ -67,22 +61,18 @@
             <span class="detail-label">Check-out</span>
             <span class="detail-value">{{ reserva()!.fechaCheckOut | date:'dd/MM/yyyy' }}</span>
           </div>
-          @if (reserva()!.nochesTotal) {
-            <div class="detail-item">
-              <span class="detail-label">Noches</span>
-              <span class="detail-value">{{ reserva()!.nochesTotal }}</span>
-            </div>
-          }
           <div class="detail-item">
             <span class="detail-label">Huéspedes</span>
             <span class="detail-value">
               {{ reserva()!.numAdultos }} adulto(s)@if ((reserva()!.numNinos ?? 0) > 0) {, {{ reserva()!.numNinos }} niño(s)}
             </span>
           </div>
-          <div class="detail-item">
-            <span class="detail-label">Habitaciones</span>
-            <span class="detail-value">{{ reserva()!.numHabitaciones }}</span>
-          </div>
+          @if ((reserva()!.numHabitaciones ?? 0) > 0) {
+            <div class="detail-item">
+              <span class="detail-label">Habitaciones</span>
+              <span class="detail-value">{{ reserva()!.numHabitaciones }}</span>
+            </div>
+          }
           <div class="detail-item">
             <span class="detail-label">Estado reserva</span>
             <span class="detail-value">{{ reserva()!.estado }}</span>
@@ -95,14 +85,10 @@
       <!-- Totales -->
       <div class="totals-section">
         <div class="totals-table">
-          <div class="totals-row">
-            <span>Subtotal</span>
-            <span>{{ reserva()!.subTotal | currency:'USD':'symbol':'1.2-2' }}</span>
-          </div>
-          @if (reserva()!.descuento && (reserva()!.descuento ?? 0) > 0) {
-            <div class="totals-row discount-row">
-              <span>Descuento</span>
-              <span class="discount-text">- {{ reserva()!.descuento }}%</span>
+          @if ((reserva()!.subTotal ?? 0) > 0) {
+            <div class="totals-row">
+              <span>Subtotal</span>
+              <span>{{ reserva()!.subTotal | currency:'USD':'symbol':'1.2-2' }}</span>
             </div>
           }
           <mat-divider />
@@ -113,30 +99,25 @@
         </div>
       </div>
 
-      <!-- Pagos registrados -->
-      @if (pagos().length > 0) {
+      @if (factura()) {
         <mat-divider />
         <div class="section">
-          <h3 class="section-label">Pagos Registrados</h3>
-          <div class="pagos-list">
-            @for (p of pagos(); track p.pagoId) {
-              <div class="pago-row">
-                <div class="pago-info">
-                  <mat-icon>payment</mat-icon>
-                  <div>
-                    <span class="pago-tipo">{{ p.tipoPago }}</span>
-                    @if (p.referenciaPago) {
-                      <span class="pago-ref">Ref: {{ p.referenciaPago }}</span>
-                    }
-                    @if (p.referenciaExterna) {
-                      <span class="pago-ref">Ext: {{ p.referenciaExterna }}</span>
-                    }
-                  </div>
-                </div>
-                <div class="pago-right">
-                  <span class="pago-monto">{{ p.monto | currency:'USD':'symbol':'1.2-2' }}</span>
-                  <span class="pago-fecha">{{ p.fechaPago | date:'dd/MM/yyyy HH:mm' }}</span>
-                </div>
+          <h3 class="section-label">Información de Pago</h3>
+          <div class="detail-grid">
+            @if (factura()!.metodoPago) {
+              <div class="detail-item">
+                <span class="detail-label">Método de pago</span>
+                <span class="detail-value">{{ factura()!.metodoPago }}</span>
+              </div>
+            }
+            <div class="detail-item">
+              <span class="detail-label">Monto pagado</span>
+              <span class="detail-value">{{ factura()!.monto | currency:'USD':'symbol':'1.2-2' }}</span>
+            </div>
+            @if (factura()!.fechaPago) {
+              <div class="detail-item">
+                <span class="detail-label">Fecha de pago</span>
+                <span class="detail-value">{{ factura()!.fechaPago | date:'dd/MM/yyyy HH:mm' }}</span>
               </div>
             }
           </div>

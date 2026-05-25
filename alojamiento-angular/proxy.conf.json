@@ -1,6 +1,6 @@
 {
   "/api": {
-    "target": "https://bookingdb-cloud.onrender.com",
+    "target": "https://alojamientosapigateway.onrender.com",
     "secure": true,
     "changeOrigin": true,
     "logLevel": "debug"

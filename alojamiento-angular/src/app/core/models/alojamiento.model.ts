@@ -1,80 +1,61 @@
 export interface PropiedadItem {
-  propiedadId: number;
+  alojamientoId: number;
+  socioId?: number;
+  tipoAlojamientoId?: number;
+  tipoAlojamientoNombre?: string;
   nombre: string;
-  descripcion?: string;
-  direccion?: string;
   ciudad?: string;
-  pais?: string;
-  estrellas: number;
+  direccion?: string;
+  descripcion?: string;
+  estrellas?: number;
   calificacionPromedio?: number;
   totalResenas?: number;
   admiteMascotas: boolean;
+  tienePiscina?: boolean;
+  tieneParqueadero?: boolean;
   estado?: string;
-  tipoAlojamiento?: string;
-  colaboradorId?: number;
+  fechaCreacion?: string;
 }
 
 export interface HabitacionItem {
   habitacionId: number;
-  propiedadId: number;
+  alojamientoId: number;
   nombre: string;
   descripcion?: string;
+  precioPorNoche: number;
+  moneda?: string;
   capacidadAdultos: number;
   capacidadNinos: number;
-  numBanos: number;
   numDormitorios: number;
-  superficieM2?: number;
-  admiteMascotas: boolean;
+  numBanos: number;
   tieneCocina: boolean;
   tieneAireAcondicionado: boolean;
-  estado: boolean;
-  precioPorNoche?: number;
+  superficieM2?: number;
+  estado: string;
 }
 
-export interface CrearPropiedadRequest {
-  nombre: string;
-  descripcion: string;
-  direccion: string;
-  ciudadId: number;
+export interface CrearAlojamientoRequest {
+  socioId: number;
   tipoAlojamientoId: number;
-  estrellas: number;
-  admiteMascotas: boolean;
-  colaboradorId: number;
+  nombre: string;
+  ciudad?: string;
+  direccion: string;
+  descripcion?: string;
+  admiteMascotas?: boolean;
+  tienePiscina?: boolean;
+  tieneParqueadero?: boolean;
 }
 
 export interface CrearHabitacionRequest {
-  propiedadId: number;
+  alojamientoId: number;
   nombre: string;
-  descripcion: string;
+  descripcion?: string;
+  precioPorNoche: number;
   capacidadAdultos: number;
-  capacidadNinos: number;
-  numBanos: number;
-  numDormitorios: number;
+  capacidadNinos?: number;
+  numDormitorios?: number;
+  numBanos?: number;
+  tieneCocina?: boolean;
+  tieneAireAcondicionado?: boolean;
   superficieM2?: number | null;
-  admiteMascotas: boolean;
-  tieneCocina: boolean;
-  tieneAireAcondicionado: boolean;
-}
-
-export interface Ciudad {
-  ciudadId: number;
-  nombre: string;
-  pais?: string;
-}
-
-export interface TipoAlojamiento {
-  tipoAlojamientoId: number;
-  nombre: string;
-}
-
-export interface BuscarPropiedadesParams {
-  CiudadId?: number;
-  EstrellasMinimas?: number;
-  AdmiteMascotas?: boolean;
-  FechaCheckIn?: string;
-  FechaCheckOut?: string;
-  NumAdultos?: number;
-  NumNinos?: number;
-  PageSize?: number;
-  PageNumber?: number;
 }

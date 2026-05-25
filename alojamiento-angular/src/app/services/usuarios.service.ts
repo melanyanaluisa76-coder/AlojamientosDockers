@@ -13,28 +13,28 @@ export class UsuariosService {
 
   // ── Auth ─────────────────────────────────────────────────────────────────
   login(req: LoginRequest): Observable<ApiResponse<LoginResponse>> {
-    return this.http.post<ApiResponse<LoginResponse>>(`${this.base}/authanaluisa/login`, req);
+    return this.http.post<ApiResponse<LoginResponse>>(`${this.base}/auth/login`, req);
   }
 
   register(req: RegisterRequest): Observable<ApiResponse<unknown>> {
-    return this.http.post<ApiResponse<unknown>>(`${this.base}/clientesanaluisa`, req);
+    return this.http.post<ApiResponse<unknown>>(`${this.base}/clientes/registrar`, req);
   }
 
   // ── Gestión de usuarios (Admin) ──────────────────────────────────────────
   getUsuarios(): Observable<ApiResponse<UsuarioAdmin[]>> {
-    return this.http.get<ApiResponse<UsuarioAdmin[]>>(`${this.base}/authanaluisa/usuarios`);
+    return this.http.get<ApiResponse<UsuarioAdmin[]>>(`${this.base}/auth/usuarios`);
   }
 
   getRoles(): Observable<ApiResponse<Rol[]>> {
-    return this.http.get<ApiResponse<Rol[]>>(`${this.base}/authanaluisa/roles`);
+    return this.http.get<ApiResponse<Rol[]>>(`${this.base}/auth/roles`);
   }
 
   cambiarRol(userId: number, rolId: number): Observable<ApiResponse<void>> {
-    return this.http.patch<ApiResponse<void>>(`${this.base}/authanaluisa/usuarios/${userId}/rol`, { rolId });
+    return this.http.patch<ApiResponse<void>>(`${this.base}/auth/usuarios/${userId}/rol`, { rolId });
   }
 
   cambiarEstadoUsuario(userId: number, activo: boolean): Observable<ApiResponse<void>> {
-    return this.http.patch<ApiResponse<void>>(`${this.base}/authanaluisa/usuarios/${userId}/estado`, { activo });
+    return this.http.patch<ApiResponse<void>>(`${this.base}/auth/usuarios/${userId}/estado`, { activo });
   }
 
   // ── Colaboradores ────────────────────────────────────────────────────────

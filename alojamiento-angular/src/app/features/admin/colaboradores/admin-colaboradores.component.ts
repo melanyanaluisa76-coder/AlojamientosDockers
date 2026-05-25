@@ -51,14 +51,14 @@ export class AdminColaboradoresComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.svc.getUsuarios().subscribe({ next: r => this.usuarios.set(r.datos ?? []) });
+    this.svc.getUsuarios().subscribe({ next: r => this.usuarios.set(r.data ?? []) });
     this.cargar();
   }
 
   cargar(): void {
     this.loading.set(true);
     this.svc.getColaboradores().subscribe({
-      next: r => this.colaboradores.set(r.datos ?? []),
+      next: r => this.colaboradores.set(r.data ?? []),
       complete: () => this.loading.set(false),
       error: () => this.loading.set(false),
     });
@@ -74,7 +74,7 @@ export class AdminColaboradoresComponent implements OnInit {
       telefono:      raw.telefono!,
     }).subscribe({
       next: r => {
-        this.colaboradores.update(list => [r.datos, ...list]);
+        this.colaboradores.update(list => [r.data, ...list]);
         this.notify.success('Colaborador creado correctamente.');
         this.colabForm.reset();
         this.showForm.set(false);

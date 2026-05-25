@@ -68,11 +68,11 @@ export class PropiedadDetalleComponent implements OnInit {
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
-    this.alojSvc.getPropiedadById(id).subscribe({
-      next: r => this.propiedad.set(r.datos),
+    this.alojSvc.getAlojamientoById(id).subscribe({
+      next: r => this.propiedad.set(r.data),
     });
-    this.alojSvc.getHabitacionesByPropiedad(id).subscribe({
-      next: r => this.habitaciones.set(r.datos ?? []),
+    this.alojSvc.getHabitacionesByAlojamiento(id).subscribe({
+      next: r => this.habitaciones.set(r.data ?? []),
       complete: () => this.loading.set(false),
       error: () => this.loading.set(false),
     });
@@ -117,8 +117,7 @@ export class PropiedadDetalleComponent implements OnInit {
     this.submitting.set(true);
     this.resvSvc.crearReserva({
       clienteId,
-      propiedadId:   this.propiedad()!.propiedadId,
-      habitacionIds: Array.from(this.selectedRooms()),
+      alojamientoId: this.propiedad()!.alojamientoId,
       habitaciones,
       fechaCheckIn:  raw.fechaCheckIn!,
       fechaCheckOut: raw.fechaCheckOut!,
@@ -128,7 +127,7 @@ export class PropiedadDetalleComponent implements OnInit {
     }).subscribe({
       next: r => {
         this.notify.success('¡Reserva creada! Procede al pago.');
-        this.router.navigate(['/checkout', r.datos.codigoReserva]);
+        this.router.navigate(['/checkout', r.data.reservaId]);
       },
       error: () => this.submitting.set(false),
       complete: () => this.submitting.set(false),

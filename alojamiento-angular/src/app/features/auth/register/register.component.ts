@@ -39,7 +39,9 @@ export class RegisterComponent {
   readonly form = this.fb.group({
     nombreCompleto:  ['', [Validators.required, Validators.minLength(3)]],
     email:           ['', [Validators.required, Validators.email]],
-    telefono:        [''],
+    cedula:          ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
+    telefono:        ['', [Validators.required, Validators.pattern(/^\d+$/)]],
+    domicilio:       ['', Validators.required],
     password:        ['', [Validators.required, Validators.minLength(6)]],
     confirmPassword: ['', Validators.required],
   }, { validators: passwordMatchValidator });
@@ -50,12 +52,14 @@ export class RegisterComponent {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.loading.set(true);
 
-    const { nombreCompleto, email, password, telefono } = this.form.getRawValue();
+    const { nombreCompleto, email, password, cedula, telefono, domicilio } = this.form.getRawValue();
     this.svc.register({
       nombreCompleto: nombreCompleto!,
       email:          email!,
       password:       password!,
-      telefono:       telefono || null,
+      cedula:         cedula!,
+      telefono:       telefono!,
+      domicilio:      domicilio!,
     }).subscribe({
       next: () => {
         this.notify.success('¡Cuenta creada exitosamente! Ahora inicia sesión.');
@@ -63,10 +67,10 @@ export class RegisterComponent {
       },
       error: err => {
         const data = err.error;
-        if (data?.errores?.length) {
-          data.errores.forEach((e: string) => this.notify.error(e));
+        if (data?.errors?.length) {
+          data.errors.forEach((e: string) => this.notify.error(e));
         } else {
-          this.notify.error(data?.mensaje ?? 'Error al crear la cuenta.');
+          this.notify.error(data?.message ?? 'Error al crear la cuenta.');
         }
         this.loading.set(false);
       },
