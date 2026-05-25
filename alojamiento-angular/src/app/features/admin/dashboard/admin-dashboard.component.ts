@@ -45,15 +45,12 @@ export class AdminDashboardComponent implements OnInit {
     let pending = 2;
     const done = () => { if (--pending === 0) this.loading.set(false); };
 
-    this.resvSvc.getTodasLasReservas().subscribe({
-      next: r => this.reservas.set(r.datos ?? []),
+    this.resvSvc.getResumenByCliente(0).subscribe({
+      next: r => this.reservas.set(r.data ?? []),
       complete: done, error: done,
     });
-    this.alojSvc.buscarPropiedades({ PageSize: 200 }).subscribe({
-      next: r => {
-        const d = r.datos;
-        this.propiedades.set(d?.items ?? (Array.isArray(d) ? d as PropiedadItem[] : []));
-      },
+    this.alojSvc.getAlojamientos().subscribe({
+      next: r => this.propiedades.set(r.data ?? []),
       complete: done, error: done,
     });
   }

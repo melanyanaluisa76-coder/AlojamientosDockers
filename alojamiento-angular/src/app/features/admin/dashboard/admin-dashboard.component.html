@@ -67,7 +67,7 @@
               @for (r of recientes(); track r.reservaId) {
                 <tr>
                   <td><span class="mono">{{ r.codigoReserva }}</span></td>
-                  <td>{{ r.nombrePropiedad ?? '—' }}</td>
+                  <td>{{ r.alojamientoId ? '#' + r.alojamientoId : '—' }}</td>
                   <td>{{ r.nombreCliente ?? '—' }}</td>
                   <td>{{ r.fechaCheckIn | date:'dd/MM/yy' }}</td>
                   <td>{{ r.fechaCheckOut | date:'dd/MM/yy' }}</td>

@@ -34,12 +34,6 @@
 
           <div class="reserva-body">
             <div class="reserva-info">
-              @if (r.nombrePropiedad) {
-                <div class="info-row">
-                  <mat-icon>apartment</mat-icon>
-                  <span>{{ r.nombrePropiedad }}</span>
-                </div>
-              }
               <div class="info-row">
                 <mat-icon>event</mat-icon>
                 <span>{{ r.fechaCheckIn | date:'dd/MM/yyyy' }} → {{ r.fechaCheckOut | date:'dd/MM/yyyy' }}</span>
@@ -48,31 +42,25 @@
                 <mat-icon>people</mat-icon>
                 <span>{{ r.numAdultos }} adulto(s)@if (r.numNinos > 0) {, {{ r.numNinos }} niño(s)}</span>
               </div>
-              @if (r.nochesTotal) {
-                <div class="info-row">
-                  <mat-icon>nights_stay</mat-icon>
-                  <span>{{ r.nochesTotal }} noche(s)</span>
-                </div>
-              }
             </div>
 
             <div class="reserva-total">
               <span class="total-label">Total</span>
               <span class="total-value">{{ r.total | currency:'USD':'symbol':'1.2-2' }}</span>
-              @if (r.descuento && r.descuento > 0) {
-                <span class="discount-badge">-{{ r.descuento | number:'1.0-0' }}%</span>
+              @if ((r.porcentajeDescuento ?? 0) > 0) {
+                <span class="discount-badge">-{{ r.porcentajeDescuento | number:'1.0-0' }}%</span>
               }
             </div>
           </div>
 
           <div class="reserva-actions">
             @if (isPendingPayment(r)) {
-              <a mat-flat-button color="primary" [routerLink]="['/checkout', r.codigoReserva]">
+              <a mat-flat-button color="primary" [routerLink]="['/checkout', r.reservaId]">
                 <mat-icon>payment</mat-icon> Pagar
               </a>
             }
             @if (hasInvoice(r)) {
-              <a mat-stroked-button color="accent" [routerLink]="['/factura', r.codigoReserva]">
+              <a mat-stroked-button color="accent" [routerLink]="['/factura', r.reservaId]">
                 <mat-icon>receipt_long</mat-icon> Ver Factura
               </a>
             }

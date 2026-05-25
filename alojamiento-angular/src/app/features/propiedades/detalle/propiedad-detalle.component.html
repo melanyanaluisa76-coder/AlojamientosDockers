@@ -29,7 +29,7 @@
           <h1 class="prop-title">{{ propiedad()!.nombre }}</h1>
           <div class="stars-row">
             @for (i of stars(5); track i) {
-              <mat-icon [class.star-filled]="i < propiedad()!.estrellas" class="star-icon">star</mat-icon>
+              <mat-icon [class.star-filled]="i < (propiedad()!.estrellas ?? 0)" class="star-icon">star</mat-icon>
             }
             @if (propiedad()!.calificacionPromedio) {
               <span class="rating-badge">★ {{ propiedad()!.calificacionPromedio | number:'1.1-1' }}</span>
@@ -39,7 +39,7 @@
           @if (propiedad()!.ciudad) {
             <p class="prop-location">
               <mat-icon>place</mat-icon>
-              {{ propiedad()!.ciudad }}@if (propiedad()!.pais) {, {{ propiedad()!.pais }}}
+              {{ propiedad()!.ciudad }}
             </p>
           }
 
@@ -48,9 +48,9 @@
             <p class="prop-desc">{{ propiedad()!.descripcion }}</p>
           }
 
-          @if (propiedad()!.tipoAlojamiento) {
+          @if (propiedad()!.tipoAlojamientoNombre) {
             <div class="prop-tag">
-              <mat-icon>category</mat-icon> {{ propiedad()!.tipoAlojamiento }}
+              <mat-icon>category</mat-icon> {{ propiedad()!.tipoAlojamientoNombre }}
             </div>
           }
         </div>
@@ -115,11 +115,6 @@
                   @if (h.tieneAireAcondicionado) {
                     <span class="amenity">
                       <mat-icon>ac_unit</mat-icon>A/C
-                    </span>
-                  }
-                  @if (h.admiteMascotas) {
-                    <span class="amenity amenity-pet">
-                      <mat-icon>pets</mat-icon>Pet-Friendly
                     </span>
                   }
                 </div>
