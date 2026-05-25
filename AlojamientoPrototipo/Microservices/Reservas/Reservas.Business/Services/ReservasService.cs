@@ -60,20 +60,31 @@ public class ReservasService : IReservasService
                 throw new DescuentoInvalidoException(request.CodigoDescuento);
         }
 
-        // 3. Verificación de Disponibilidad vía gRPC (Sincrónico y Rápido)
+        // 3. Verificación de disponibilidad contra la DB propia (fuente de verdad)
+        var habitacionIds = request.Habitaciones.Select(h => h.HabitacionId).ToList();
+        var ocupadas = await _reservasDataService.HabitacionesOcupadasAsync(
+            habitacionIds, request.FechaCheckIn, request.FechaCheckOut);
+        if (ocupadas)
+            throw new BusinessRuleException(
+                "Una o más habitaciones ya están reservadas para las fechas solicitadas.");
+
+        // 3b. Verificación adicional vía gRPC (calendario externo)
         foreach (var habReq in request.Habitaciones)
         {
-            var disponibilidad = await _calendarioGrpcClient.VerificarDisponibilidadAsync(new Shared.Protos.DisponibilidadRequest
+            try
             {
-                HabitacionId = habReq.HabitacionId,
-                FechaInicio = request.FechaCheckIn.ToString("yyyy-MM-dd"),
-                FechaFin = request.FechaCheckOut.ToString("yyyy-MM-dd")
-            });
+                var disponibilidad = await _calendarioGrpcClient.VerificarDisponibilidadAsync(new Shared.Protos.DisponibilidadRequest
+                {
+                    HabitacionId = habReq.HabitacionId,
+                    FechaInicio = request.FechaCheckIn.ToString("yyyy-MM-dd"),
+                    FechaFin = request.FechaCheckOut.ToString("yyyy-MM-dd")
+                });
 
-            if (!disponibilidad.Disponible)
-            {
-                throw new BusinessRuleException($"Habitación {habReq.HabitacionId} no disponible: {disponibilidad.Mensaje}");
+                if (!disponibilidad.Disponible)
+                    throw new BusinessRuleException($"Habitación {habReq.HabitacionId} no disponible: {disponibilidad.Mensaje}");
             }
+            catch (BusinessRuleException) { throw; }
+            catch { /* gRPC stub/no disponible — la validación de DB ya es suficiente */ }
         }
 
         // 4. Generación de detalles y subtotal

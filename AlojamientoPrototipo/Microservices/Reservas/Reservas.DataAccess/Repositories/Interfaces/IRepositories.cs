@@ -15,6 +15,9 @@ public interface IRepositoryBase<T> where T : class
     Task SaveChangesAsync();
 }
 
-public interface IReservasRepository : IRepositoryBase<ReservaEntity> { }
+public interface IReservasRepository : IRepositoryBase<ReservaEntity>
+{
+    Task<bool> HasConflictingBookingsAsync(List<int> habitacionIds, DateOnly checkIn, DateOnly checkOut);
+}
 public interface IDescuentosRepository : IRepositoryBase<DescuentoEntity> { }
 public interface IReservaDetallesRepository : IRepositoryBase<ReservaDetalleHabitacionEntity> { }

@@ -74,4 +74,7 @@ public class ReservasDataService : IReservasDataService
         if (entity == null) throw new KeyNotFoundException($"Reserva {id} no encontrada");
         await _repo.DeleteAsync(entity);
     }
+
+    public async Task<bool> HabitacionesOcupadasAsync(List<int> habitacionIds, DateOnly checkIn, DateOnly checkOut)
+        => await _repo.HasConflictingBookingsAsync(habitacionIds, checkIn, checkOut);
 }

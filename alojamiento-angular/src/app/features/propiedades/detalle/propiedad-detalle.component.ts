@@ -136,20 +136,26 @@ export class PropiedadDetalleComponent implements OnInit {
     }
 
     // Validación de conflicto de fechas
-    const checkIn  = new Date(raw.fechaCheckIn!);
-    const checkOut = new Date(raw.fechaCheckOut!);
+    const checkIn     = new Date(raw.fechaCheckIn!);
+    const checkOut    = new Date(raw.fechaCheckOut!);
     const selectedIds = Array.from(this.selectedRooms());
     const activeStates = ['Pendiente', 'Confirmada', 'Activa', 'Completada'];
-    const hasConflict = this.existingReservas()
-      .filter(r => activeStates.includes(r.estado))
-      .some(r => {
-        const datesOverlap = checkIn < new Date(r.fechaCheckOut) && checkOut > new Date(r.fechaCheckIn);
-        if (!datesOverlap) return false;
-        const bookedRooms = r.detallesHabitacion?.map(d => d.habitacionId) ?? [];
-        return selectedIds.some(id => bookedRooms.includes(id));
-      });
 
-    if (hasConflict) {
+    // Check 1: localStorage — rastreo exacto por habitacionId (confiable)
+    type BookedSlot = { habitacionId: number; checkIn: string; checkOut: string };
+    const storedSlots: BookedSlot[] = JSON.parse(localStorage.getItem('booked_slots') || '[]');
+    const hasLocalConflict = storedSlots.some(slot =>
+      selectedIds.includes(slot.habitacionId) &&
+      checkIn < new Date(slot.checkOut) && checkOut > new Date(slot.checkIn)
+    );
+
+    // Check 2: backend — por alojamientoId con fechas solapadas (backup cuando detallesHabitacion es nulo)
+    const alojId = this.propiedad()!.alojamientoId;
+    const hasBackendConflict = this.existingReservas()
+      .filter(r => activeStates.includes(r.estado) && r.alojamientoId === alojId)
+      .some(r => checkIn < new Date(r.fechaCheckOut) && checkOut > new Date(r.fechaCheckIn));
+
+    if (hasLocalConflict || hasBackendConflict) {
       this.notify.error('Una o más habitaciones ya están reservadas para esas fechas.');
       return;
     }
@@ -172,6 +178,15 @@ export class PropiedadDetalleComponent implements OnInit {
       llevaMascotas: raw.llevaMascotas ?? false,
     }).subscribe({
       next: r => {
+        // Persistir habitaciones reservadas en localStorage para detección de conflictos futura
+        type BookedSlot = { habitacionId: number; checkIn: string; checkOut: string };
+        const storedSlots: BookedSlot[] = JSON.parse(localStorage.getItem('booked_slots') || '[]');
+        selectedIds.forEach(id => storedSlots.push({
+          habitacionId: id,
+          checkIn: raw.fechaCheckIn!,
+          checkOut: raw.fechaCheckOut!,
+        }));
+        localStorage.setItem('booked_slots', JSON.stringify(storedSlots));
         this.notify.success('¡Reserva creada! Procede al pago.');
         this.router.navigate(['/checkout', r.data.reservaId]);
       },

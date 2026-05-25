@@ -9,6 +9,7 @@ public interface IReservasDataService
     Task<ReservaDataModel> CreateAsync(ReservaDataModel model);
     Task UpdateStatusAsync(int id, string nuevoEstado);
     Task DeleteAsync(int id);
+    Task<bool> HabitacionesOcupadasAsync(List<int> habitacionIds, DateOnly checkIn, DateOnly checkOut);
 }
 
 public interface IDescuentosDataService
