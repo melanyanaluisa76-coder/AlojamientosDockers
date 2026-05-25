@@ -187,6 +187,14 @@ export class PropiedadDetalleComponent implements OnInit {
           checkOut: raw.fechaCheckOut!,
         }));
         localStorage.setItem('booked_slots', JSON.stringify(storedSlots));
+
+        // Guardar reservaId para que el dashboard admin pueda agregarlo
+        const adminIds: number[] = JSON.parse(localStorage.getItem('admin_reserva_ids') || '[]');
+        if (!adminIds.includes(r.data.reservaId)) {
+          adminIds.push(r.data.reservaId);
+          localStorage.setItem('admin_reserva_ids', JSON.stringify(adminIds));
+        }
+
         this.notify.success('¡Reserva creada! Procede al pago.');
         this.router.navigate(['/checkout', r.data.reservaId]);
       },

@@ -4,6 +4,8 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { ReservasService } from '../../../services/reservas.service';
 import { AlojamientosService } from '../../../services/alojamientos.service';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
@@ -45,12 +47,38 @@ export class AdminDashboardComponent implements OnInit {
     let pending = 2;
     const done = () => { if (--pending === 0) this.loading.set(false); };
 
-    this.resvSvc.getResumenByCliente(0).subscribe({
-      next: r => this.reservas.set(r.data ?? []),
-      complete: done, error: done,
-    });
     this.alojSvc.getAlojamientos().subscribe({
       next: r => this.propiedades.set(r.data ?? []),
+      complete: done, error: done,
+    });
+
+    // Estrategia: combinar reservas del clienteId demo (1) con las
+    // almacenadas en localStorage de cualquier sesión en este navegador
+    const storedIds: number[] = JSON.parse(localStorage.getItem('admin_reserva_ids') || '[]');
+
+    const base$ = this.resvSvc.getReservasByCliente(1).pipe(
+      catchError(() => of({ data: [] as ReservaResponse[], success: false }))
+    );
+
+    const extra$ = storedIds.length > 0
+      ? forkJoin(storedIds.map(id =>
+          this.resvSvc.getReservaById(id).pipe(
+            catchError(() => of({ data: null as ReservaResponse | null, success: false }))
+          )
+        ))
+      : of([] as { data: ReservaResponse | null; success: boolean }[]);
+
+    forkJoin([base$, extra$]).subscribe({
+      next: ([baseRes, extraRes]) => {
+        const baseList = baseRes.data ?? [];
+        const extraList = (extraRes as { data: ReservaResponse | null }[])
+          .map(r => r.data)
+          .filter((r): r is ReservaResponse => r !== null);
+        // Unión sin duplicados por reservaId
+        const seen = new Set(baseList.map(r => r.reservaId));
+        const merged = [...baseList, ...extraList.filter(r => !seen.has(r.reservaId))];
+        this.reservas.set(merged);
+      },
       complete: done, error: done,
     });
   }
