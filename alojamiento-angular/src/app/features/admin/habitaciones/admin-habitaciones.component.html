@@ -73,8 +73,8 @@
         <mat-form-field appearance="outline">
           <mat-label>Precio por noche (USD)</mat-label>
           <mat-icon matPrefix>attach_money</mat-icon>
-          <input matInput type="number" formControlName="precioPorNoche" min="1" />
-          @if (habForm.get('precioPorNoche')?.hasError('required') && habForm.get('precioPorNoche')?.touched) {
+          <input matInput type="number" formControlName="precioNoche" min="1" />
+          @if (habForm.get('precioNoche')?.hasError('required') && habForm.get('precioNoche')?.touched) {
             <mat-error>El precio es obligatorio.</mat-error>
           }
         </mat-form-field>
@@ -132,7 +132,7 @@
                 <td>{{ h.numDormitorios }} / {{ h.numBanos }}</td>
                 <td>{{ h.superficieM2 ? h.superficieM2 + ' m²' : '—' }}</td>
                 <td class="font-semibold text-accent">
-                  {{ h.precioPorNoche ? (h.precioPorNoche | currency:'USD':'symbol':'1.0-0') : '—' }}
+                  {{ h.precioNoche ? (h.precioNoche | currency:'USD':'symbol':'1.0-0') : '—' }}
                 </td>
                 <td>
                   <div class="extras-row">

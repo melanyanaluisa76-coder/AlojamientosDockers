@@ -22,8 +22,7 @@ export interface HabitacionItem {
   alojamientoId: number;
   nombre: string;
   descripcion?: string;
-  precioPorNoche: number;
-  moneda?: string;
+  precioNoche: number;
   capacidadAdultos: number;
   capacidadNinos: number;
   numDormitorios: number;
@@ -31,7 +30,7 @@ export interface HabitacionItem {
   tieneCocina: boolean;
   tieneAireAcondicionado: boolean;
   superficieM2?: number;
-  estado: string;
+  estado?: string;
 }
 
 export interface CrearAlojamientoRequest {
@@ -50,7 +49,7 @@ export interface CrearHabitacionRequest {
   alojamientoId: number;
   nombre: string;
   descripcion?: string;
-  precioPorNoche: number;
+  precioNoche: number;
   capacidadAdultos: number;
   capacidadNinos?: number;
   numDormitorios?: number;

@@ -64,8 +64,7 @@
 
         <div class="rooms-list">
           @for (h of habitaciones(); track h.habitacionId) {
-            @if (h.estado) {
-              <div
+            <div
                 class="room-card"
                 [class.room-selected]="selectedRooms().has(h.habitacionId)"
                 (click)="toggleRoom(h.habitacionId)"
@@ -79,9 +78,9 @@
                       <p class="room-desc">{{ h.descripcion }}</p>
                     }
                   </div>
-                  @if (h.precioPorNoche) {
+                  @if (h.precioNoche) {
                     <div class="room-price">
-                      <span class="price-amount">{{ h.precioPorNoche | currency:'USD':'symbol':'1.0-0' }}</span>
+                      <span class="price-amount">{{ h.precioNoche | currency:'USD':'symbol':'1.0-0' }}</span>
                       <span class="price-label">/ noche</span>
                     </div>
                   }
@@ -128,7 +127,6 @@
                   }
                 </div>
               </div>
-            }
           }
         </div>
       </div>

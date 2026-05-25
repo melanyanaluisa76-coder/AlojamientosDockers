@@ -63,7 +63,7 @@ export class PropiedadDetalleComponent implements OnInit {
     if (nights === 0) return 0;
     return this.habitaciones()
       .filter(h => this.selectedRooms().has(h.habitacionId))
-      .reduce((acc, h) => acc + (h.precioPorNoche ?? 0) * nights, 0);
+      .reduce((acc, h) => acc + (h.precioNoche ?? 0) * nights, 0);
   });
 
   ngOnInit(): void {
@@ -111,7 +111,7 @@ export class PropiedadDetalleComponent implements OnInit {
     const nights = this.nightCount();
     const habitaciones = Array.from(this.selectedRooms()).map(id => {
       const h = this.habitaciones().find(x => x.habitacionId === id)!;
-      return { habitacionId: id, precioPorNoche: h.precioPorNoche ?? 0, numNoches: nights };
+      return { habitacionId: id, precioPorNoche: h.precioNoche ?? 0, numNoches: nights };
     });
 
     this.submitting.set(true);

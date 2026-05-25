@@ -50,7 +50,7 @@ export class AdminHabitacionesComponent implements OnInit {
     numBanos:              [1, [Validators.required, Validators.min(1)]],
     numDormitorios:        [1, [Validators.required, Validators.min(1)]],
     superficieM2:          [null as number | null],
-    precioPorNoche:        [null as number | null, [Validators.required, Validators.min(1)]],
+    precioNoche:        [null as number | null, [Validators.required, Validators.min(1)]],
     tieneCocina:           [false],
     tieneAireAcondicionado:[false],
   });
@@ -82,7 +82,7 @@ export class AdminHabitacionesComponent implements OnInit {
       alojamientoId,
       nombre:                raw.nombre!,
       descripcion:           raw.descripcion || undefined,
-      precioPorNoche:        raw.precioPorNoche!,
+      precioNoche:        raw.precioNoche!,
       capacidadAdultos:      raw.capacidadAdultos!,
       capacidadNinos:        raw.capacidadNinos ?? 0,
       numBanos:              raw.numBanos!,
