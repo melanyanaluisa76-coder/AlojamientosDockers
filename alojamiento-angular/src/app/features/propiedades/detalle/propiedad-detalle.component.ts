@@ -16,6 +16,7 @@ import { AuthStore } from '../../../core/store/auth.store';
 import { NotificationService } from '../../../core/services/notification.service';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
 import { PropiedadItem, HabitacionItem } from '../../../core/models/alojamiento.model';
+import { ReservaResponse } from '../../../core/models/reserva.model';
 
 @Component({
   selector: 'app-propiedad-detalle',
@@ -38,11 +39,12 @@ export class PropiedadDetalleComponent implements OnInit {
   readonly authStore         = inject(AuthStore);
   private readonly notify   = inject(NotificationService);
 
-  readonly propiedad   = signal<PropiedadItem | null>(null);
-  readonly habitaciones = signal<HabitacionItem[]>([]);
-  readonly loading      = signal(true);
-  readonly submitting   = signal(false);
-  readonly selectedRooms = signal<Set<number>>(new Set());
+  readonly propiedad      = signal<PropiedadItem | null>(null);
+  readonly habitaciones   = signal<HabitacionItem[]>([]);
+  readonly loading        = signal(true);
+  readonly submitting     = signal(false);
+  readonly selectedRooms  = signal<Set<number>>(new Set());
+  private readonly existingReservas = signal<ReservaResponse[]>([]);
 
   readonly bookingForm = this.fb.group({
     fechaCheckIn:  ['', Validators.required],
@@ -81,6 +83,13 @@ export class PropiedadDetalleComponent implements OnInit {
       complete: () => this.loading.set(false),
       error: () => this.loading.set(false),
     });
+
+    const clienteId = this.authStore.user()?.clienteId;
+    if (clienteId) {
+      this.resvSvc.getReservasByCliente(clienteId).subscribe({
+        next: r => this.existingReservas.set(r.data ?? []),
+      });
+    }
   }
 
   toggleRoom(id: number): void {
@@ -110,6 +119,38 @@ export class PropiedadDetalleComponent implements OnInit {
     const clienteId = this.authStore.user()?.clienteId;
     if (!clienteId) {
       this.notify.error('No se encontró el perfil de cliente.');
+      return;
+    }
+
+    if (this.nightCount() === 0) {
+      this.notify.error('Las fechas seleccionadas no son válidas: el check-out debe ser posterior al check-in.');
+      return;
+    }
+
+    // Validación de capacidad
+    const selectedHabs = this.habitaciones().filter(h => this.selectedRooms().has(h.habitacionId));
+    const totalCapacity = selectedHabs.reduce((acc, h) => acc + h.capacidadAdultos, 0);
+    if ((raw.numAdultos ?? 0) > totalCapacity) {
+      this.notify.error(`Las habitaciones seleccionadas admiten máximo ${totalCapacity} adulto(s).`);
+      return;
+    }
+
+    // Validación de conflicto de fechas
+    const checkIn  = new Date(raw.fechaCheckIn!);
+    const checkOut = new Date(raw.fechaCheckOut!);
+    const selectedIds = Array.from(this.selectedRooms());
+    const activeStates = ['Pendiente', 'Confirmada', 'Activa', 'Completada'];
+    const hasConflict = this.existingReservas()
+      .filter(r => activeStates.includes(r.estado))
+      .some(r => {
+        const datesOverlap = checkIn < new Date(r.fechaCheckOut) && checkOut > new Date(r.fechaCheckIn);
+        if (!datesOverlap) return false;
+        const bookedRooms = r.detallesHabitacion?.map(d => d.habitacionId) ?? [];
+        return selectedIds.some(id => bookedRooms.includes(id));
+      });
+
+    if (hasConflict) {
+      this.notify.error('Una o más habitaciones ya están reservadas para esas fechas.');
       return;
     }
 

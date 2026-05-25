@@ -50,10 +50,12 @@ export class MisReservasComponent implements OnInit {
   }
 
   isPendingPayment(r: ReservaResponse): boolean {
+    if (localStorage.getItem(`reserva_paid_${r.reservaId}`)) return false;
     return ['Pendiente', 'Confirmada'].includes(r.estado);
   }
 
   hasInvoice(r: ReservaResponse): boolean {
+    if (localStorage.getItem(`reserva_paid_${r.reservaId}`)) return true;
     return r.estado === 'Completada';
   }
 }

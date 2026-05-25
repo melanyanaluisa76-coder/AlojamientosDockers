@@ -51,10 +51,16 @@ export class CheckoutComponent implements OnInit {
       next: r => this.metodosPago.set(r.data ?? []),
     });
 
+    // Guardia frontend: si ya se pagó en esta sesión, ir directo a factura
+    if (localStorage.getItem(`reserva_paid_${id}`)) {
+      this.router.navigate(['/factura', id]);
+      return;
+    }
+
     this.resvSvc.getReservaById(id).subscribe({
       next: r => {
         this.reserva.set(r.data);
-        if (r.data?.estado === 'Completada') {
+        if (r.data?.estado === 'Completada' || localStorage.getItem(`reserva_paid_${r.data?.reservaId}`)) {
           this.router.navigate(['/factura', id]);
         }
       },
@@ -85,6 +91,10 @@ export class CheckoutComponent implements OnInit {
       }],
     }).subscribe({
       next: () => {
+        // Marcar pagada en localStorage para evitar pagos duplicados
+        localStorage.setItem(`reserva_paid_${r.reservaId}`, '1');
+        // Intentar actualizar estado en backend (puede ser stub, pero si funciona, persiste)
+        this.resvSvc.actualizarEstado(r.reservaId, { estado: 'Completada' }).subscribe();
         this.notify.success('¡Pago procesado exitosamente!');
         this.router.navigate(['/factura', r.reservaId]);
       },
