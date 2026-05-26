@@ -78,4 +78,29 @@
   background: #f8fafc;
   border-top: 1px solid var(--color-border);
   justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.cancel-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.cancel-confirm-msg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #b91c1c;
+  mat-icon { font-size: 1rem; height: 1rem; width: 1rem; }
+}
+
+.cancel-confirm-btns {
+  display: flex;
+  gap: 0.5rem;
 }

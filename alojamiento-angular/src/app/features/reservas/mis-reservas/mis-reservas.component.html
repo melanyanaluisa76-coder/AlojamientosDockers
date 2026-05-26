@@ -54,15 +54,38 @@
           </div>
 
           <div class="reserva-actions">
-            @if (isPendingPayment(r)) {
-              <a mat-flat-button color="primary" [routerLink]="['/checkout', r.reservaId]">
-                <mat-icon>payment</mat-icon> Pagar
-              </a>
-            }
-            @if (hasInvoice(r)) {
-              <a mat-stroked-button color="accent" [routerLink]="['/factura', r.reservaId]">
-                <mat-icon>receipt_long</mat-icon> Ver Factura
-              </a>
+            @if (cancellingId() === r.reservaId) {
+              <!-- Confirmación inline -->
+              <div class="cancel-confirm">
+                <span class="cancel-confirm-msg">
+                  <mat-icon>warning</mat-icon>
+                  ¿Confirmar cancelación? Esta acción no se puede deshacer.
+                </span>
+                <div class="cancel-confirm-btns">
+                  <button mat-stroked-button (click)="abortarCancelacion()" [disabled]="cancelling()">
+                    No, volver
+                  </button>
+                  <button mat-flat-button color="warn" (click)="confirmarCancelacion(r)" [disabled]="cancelling()">
+                    @if (cancelling()) { Cancelando... } @else { Sí, cancelar }
+                  </button>
+                </div>
+              </div>
+            } @else {
+              @if (isPendingPayment(r)) {
+                <a mat-flat-button color="primary" [routerLink]="['/checkout', r.reservaId]">
+                  <mat-icon>payment</mat-icon> Pagar
+                </a>
+              }
+              @if (hasInvoice(r)) {
+                <a mat-stroked-button color="accent" [routerLink]="['/factura', r.reservaId]">
+                  <mat-icon>receipt_long</mat-icon> Ver Factura
+                </a>
+              }
+              @if (puedeCancel(r)) {
+                <button mat-stroked-button color="warn" (click)="solicitarCancelacion(r.reservaId)">
+                  <mat-icon>cancel</mat-icon> Cancelar reserva
+                </button>
+              }
             }
           </div>
         </div>
