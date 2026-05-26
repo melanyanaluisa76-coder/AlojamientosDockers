@@ -1,523 +1,815 @@
 {
   "info": {
-    "_postman_id": "alojamiento-mr-full-suite",
-    "name": "AlojamientoMR - Suite Completa de Pruebas",
-    "description": "Colección completa de pruebas para los 4 microservicios de AlojamientoMR. Incluye variables de entorno, flujo de autenticación automático y pruebas de todos los endpoints con los sufijos -lucano.",
+    "_postman_id": "housingplace-analuisa-v2",
+    "name": "HousingPlace — Suite Completa (naomy-analuisa)",
+    "description": "Colección exhaustiva para todos los endpoints de HousingPlace vía API Gateway. Incluye pruebas positivas, negativas, casos borde y flujo E2E completo.\n\nGateway: https://alojamientosapigateway.onrender.com\nPrefijo: /api/v1/naomy-analuisa/",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "gateway_url", "value": "https://apigatway-0wjx.onrender.com", "type": "string" },
-    { "key": "clientes_url", "value": "https://clientes-hudx.onrender.com", "type": "string" },
-    { "key": "alojamientos_url", "value": "https://alojamiento-t2f7.onrender.com", "type": "string" },
-    { "key": "reservas_url", "value": "https://reseras.onrender.com", "type": "string" },
-    { "key": "facturacion_url", "value": "https://facturacione.onrender.com", "type": "string" },
-    { "key": "token", "value": "", "type": "string" },
-    { "key": "clienteId", "value": "", "type": "string" },
-    { "key": "alojamientoId", "value": "1", "type": "string" },
-    { "key": "habitacionId", "value": "1", "type": "string" },
-    { "key": "reservaId", "value": "", "type": "string" }
+    { "key": "gateway",        "value": "https://alojamientosapigateway.onrender.com", "type": "string" },
+    { "key": "aloj_ms",        "value": "https://alojamientosalojamientos.onrender.com", "type": "string" },
+    { "key": "reservas_ms",    "value": "https://alojamientosreservas.onrender.com", "type": "string" },
+    { "key": "usuarios_ms",    "value": "https://alojamientosusuarios.onrender.com", "type": "string" },
+    { "key": "facturacion_ms", "value": "https://alojamientosfacturacion.onrender.com", "type": "string" },
+    { "key": "prefix",         "value": "/api/v1/naomy-analuisa", "type": "string" },
+    { "key": "token",          "value": "", "type": "string" },
+    { "key": "clienteId",      "value": "1", "type": "string" },
+    { "key": "alojamientoId",  "value": "1", "type": "string" },
+    { "key": "habitacionId",   "value": "1", "type": "string" },
+    { "key": "reservaId",      "value": "", "type": "string" },
+    { "key": "facturaId",      "value": "", "type": "string" },
+    { "key": "fotoId",         "value": "", "type": "string" }
   ],
   "item": [
+
     {
-      "name": "🔐 1. Autenticación (Usuarios MS)",
+      "name": "🔐 1. Autenticación",
       "item": [
         {
-          "name": "POST /auth-lucano/login",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "  const body = pm.response.json();",
-                  "  if (body.token) {",
-                  "    pm.collectionVariables.set('token', body.token);",
-                  "    pm.test('✅ Token guardado correctamente', () => pm.expect(body.token).to.be.a('string'));",
-                  "  }",
-                  "}",
-                  "pm.test('✅ Login exitoso (200)', () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ],
+          "name": "POST /auth/login — Admin (guarda token)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Status 200', () => pm.response.to.have.status(200));",
+            "const b = pm.response.json();",
+            "pm.test('✅ Responde con token', () => pm.expect(b).to.have.property('token'));",
+            "if (b.token) pm.collectionVariables.set('token', b.token);",
+            "pm.test('✅ Token guardado', () => pm.expect(pm.collectionVariables.get('token')).to.be.a('string').and.not.empty);"
+          ]}}],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@alojamiento.com\",\n  \"password\": \"Admin1234!\"\n}"
-            },
-            "url": {
-              "raw": "{{clientes_url}}/api/v1/auth-lucano/login",
-              "host": ["{{clientes_url}}"],
-              "path": ["api", "v1", "auth-lucano", "login"]
-            },
-            "description": "Autenticación de usuario. El token JWT se guarda automáticamente en la variable 'token' para las demás requests."
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@alojamiento.com\",\n  \"password\": \"Admin12345!\"\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/auth/login", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","auth","login"] }
           }
         },
         {
-          "name": "POST /clientes-lucano/registrar",
+          "name": "POST /auth/login — Credenciales incorrectas (debe dar 401)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Rechaza credenciales inválidas (401)', () => pm.response.to.have.status(401));"
+          ]}}],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"test@prueba.com\",\n  \"password\": \"Test1234!\",\n  \"nombreCompleto\": \"Test Usuario\",\n  \"cedula\": \"1234567890\",\n  \"telefono\": \"0987654321\",\n  \"domicilio\": \"Calle Falsa 123\"\n}"
-            },
-            "url": {
-              "raw": "{{clientes_url}}/api/v1/clientes-lucano/registrar",
-              "host": ["{{clientes_url}}"],
-              "path": ["api", "v1", "clientes-lucano", "registrar"]
-            }
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"noexiste@nada.com\",\n  \"password\": \"WrongPass999\"\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/auth/login", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","auth","login"] }
           }
         }
       ]
     },
+
     {
-      "name": "👥 2. Clientes (Usuarios MS)",
+      "name": "👤 2. Clientes / Huéspedes",
       "item": [
         {
-          "name": "GET /clientes-lucano - Todos los clientes",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('✅ Status 200', () => pm.response.to.have.status(200));",
-                  "const body = pm.response.json();",
-                  "if (Array.isArray(body) && body.length > 0) {",
-                  "  pm.collectionVariables.set('clienteId', body[0].clienteId);",
-                  "  pm.test('✅ clienteId guardado: ' + body[0].clienteId, () => true);",
-                  "}"
-                ]
-              }
-            }
-          ],
+          "name": "POST /clientes/registrar — Nuevo huésped",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Status 201', () => pm.response.to.have.status(201));",
+            "const b = pm.response.json();",
+            "pm.test('✅ success true', () => pm.expect(b.success).to.be.true);"
+          ]}}],
           "request": {
-            "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
-            "url": {
-              "raw": "{{clientes_url}}/api/v1/clientes-lucano",
-              "host": ["{{clientes_url}}"],
-              "path": ["api", "v1", "clientes-lucano"]
-            }
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"huesped.prueba@housingplace.com\",\n  \"password\": \"Prueba1234!\",\n  \"nombreCompleto\": \"Huésped Prueba Test\",\n  \"cedula\": \"1799999999\",\n  \"telefono\": \"0991234567\",\n  \"domicilio\": \"Av. Test 123, Quito\"\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/clientes/registrar", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","clientes","registrar"] }
           }
         },
         {
-          "name": "GET /clientes-lucano/:id - Cliente por ID",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('✅ Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('✅ Tiene clienteId', () => pm.expect(pm.response.json()).to.have.property('clienteId'));"
-                ]
-              }
-            }
-          ],
+          "name": "POST /clientes/registrar — Cédula duplicada (debe dar 400)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Rechaza cédula duplicada (400)', () => pm.response.to.have.status(400));",
+            "const b = pm.response.json();",
+            "pm.test('✅ success false', () => pm.expect(b.success).to.be.false);",
+            "pm.test('✅ Tiene mensaje de error', () => pm.expect(b.message).to.be.a('string').and.not.empty);"
+          ]}}],
           "request": {
-            "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
-            "url": {
-              "raw": "{{clientes_url}}/api/v1/clientes-lucano/{{clienteId}}",
-              "host": ["{{clientes_url}}"],
-              "path": ["api", "v1", "clientes-lucano", "{{clienteId}}"]
-            }
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"otro@email.com\",\n  \"password\": \"Prueba1234!\",\n  \"nombreCompleto\": \"Duplicado Test\",\n  \"cedula\": \"1799999999\",\n  \"telefono\": \"0991111111\",\n  \"domicilio\": \"Calle Duplicada 1\"\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/clientes/registrar", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","clientes","registrar"] }
           }
         },
         {
-          "name": "GET /usuarios-lucano - Todos los usuarios",
+          "name": "GET /clientes/cedula/{cedula} — Buscar existente",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Status 200', () => pm.response.to.have.status(200));",
+            "const b = pm.response.json();",
+            "pm.test('✅ Tiene clienteId', () => pm.expect(b.data).to.have.property('clienteId'));",
+            "if (b.data?.clienteId) pm.collectionVariables.set('clienteId', b.data.clienteId);"
+          ]}}],
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
-            "url": {
-              "raw": "{{clientes_url}}/api/v1/usuarios-lucano",
-              "host": ["{{clientes_url}}"],
-              "path": ["api", "v1", "usuarios-lucano"]
-            }
+            "header": [],
+            "url": { "raw": "{{gateway}}{{prefix}}/clientes/cedula/1799999999", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","clientes","cedula","1799999999"] }
           }
         },
         {
-          "name": "GET /localizaciones-lucano - Todas las localizaciones",
+          "name": "GET /clientes/cedula/{cedula} — Cédula inexistente (debe dar 404)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ No encontrado (404)', () => pm.response.to.have.status(404));"
+          ]}}],
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
-            "url": {
-              "raw": "{{clientes_url}}/api/v1/localizaciones-lucano",
-              "host": ["{{clientes_url}}"],
-              "path": ["api", "v1", "localizaciones-lucano"]
-            }
+            "header": [],
+            "url": { "raw": "{{gateway}}{{prefix}}/clientes/cedula/0000000000", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","clientes","cedula","0000000000"] }
+          }
+        },
+        {
+          "name": "GET /clientes/{clienteId} — Perfil del huésped",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Status 200', () => pm.response.to.have.status(200));",
+            "const b = pm.response.json();",
+            "pm.test('✅ Tiene nombreCompleto', () => pm.expect(b.data).to.have.property('nombreCompleto'));",
+            "pm.test('✅ Tiene email', () => pm.expect(b.data).to.have.property('email'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{gateway}}{{prefix}}/clientes/{{clienteId}}", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","clientes","{{clienteId}}"] }
+          }
+        },
+        {
+          "name": "GET /clientes/9999 — ID inexistente (debe dar 404)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ No encontrado (404)', () => pm.response.to.have.status(404));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{gateway}}{{prefix}}/clientes/9999", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","clientes","9999"] }
+          }
+        },
+        {
+          "name": "PUT /clientes/{clienteId} — Actualizar perfil",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Status 200 o 204', () => pm.expect([200,204]).to.include(pm.response.code));"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombreCompleto\": \"Huésped Prueba Actualizado\",\n  \"telefono\": \"0997654321\",\n  \"domicilio\": \"Av. Test 456, Quito Actualizado\"\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/clientes/{{clienteId}}", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","clientes","{{clienteId}}"] }
           }
         }
       ]
     },
+
     {
-      "name": "🏨 3. Alojamientos (Alojamientos MS)",
+      "name": "🏨 3. Alojamientos",
       "item": [
         {
-          "name": "GET /alojamientos-lucano - Todos los alojamientos",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('✅ Status 200', () => pm.response.to.have.status(200));",
-                  "const body = pm.response.json();",
-                  "if (Array.isArray(body) && body.length > 0) {",
-                  "  pm.collectionVariables.set('alojamientoId', body[0].alojamientoId);",
-                  "}"
-                ]
-              }
-            }
-          ],
+          "name": "GET /alojamientos — Todos (guarda alojamientoId)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Status 200', () => pm.response.to.have.status(200));",
+            "const b = pm.response.json();",
+            "pm.test('✅ success true', () => pm.expect(b.success).to.be.true);",
+            "pm.test('✅ data es array', () => pm.expect(b.data).to.be.an('array'));",
+            "if (b.data?.length > 0) {",
+            "  pm.collectionVariables.set('alojamientoId', b.data[0].alojamientoId);",
+            "  pm.test('✅ Primer alojamientoId guardado: ' + b.data[0].alojamientoId, () => true);",
+            "}"
+          ]}}],
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{alojamientos_url}}/api/v1/alojamientos-lucano",
-              "host": ["{{alojamientos_url}}"],
-              "path": ["api", "v1", "alojamientos-lucano"]
-            }
+            "url": { "raw": "{{gateway}}{{prefix}}/alojamientos", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","alojamientos"] }
           }
         },
         {
-          "name": "GET /alojamientos-lucano/:id - Detalle de alojamiento",
+          "name": "GET /alojamientos/{id} — Detalle",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Status 200', () => pm.response.to.have.status(200));",
+            "const b = pm.response.json();",
+            "pm.test('✅ Tiene nombre', () => pm.expect(b.data).to.have.property('nombre'));",
+            "pm.test('✅ Tiene admiteMascotas', () => pm.expect(b.data).to.have.property('admiteMascotas'));"
+          ]}}],
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{alojamientos_url}}/api/v1/alojamientos-lucano/{{alojamientoId}}",
-              "host": ["{{alojamientos_url}}"],
-              "path": ["api", "v1", "alojamientos-lucano", "{{alojamientoId}}"]
-            }
+            "url": { "raw": "{{gateway}}{{prefix}}/alojamientos/{{alojamientoId}}", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","alojamientos","{{alojamientoId}}"] }
           }
         },
         {
-          "name": "POST /alojamientos-lucano - Crear alojamiento",
+          "name": "GET /alojamientos/9999 — ID inexistente (debe dar 404)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ No encontrado (404)', () => pm.response.to.have.status(404));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{gateway}}{{prefix}}/alojamientos/9999", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","alojamientos","9999"] }
+          }
+        },
+        {
+          "name": "POST /alojamientos — Crear propiedad",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Status 201', () => pm.response.to.have.status(201));",
+            "const b = pm.response.json();",
+            "pm.test('✅ Tiene alojamientoId', () => pm.expect(b.data).to.have.property('alojamientoId'));",
+            "pm.test('✅ Nombre correcto', () => pm.expect(b.data.nombre).to.eql('Hotel Postman Test'));"
+          ]}}],
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"socioId\": 1,\n  \"tipoAlojamientoId\": 1,\n  \"nombre\": \"Hotel Prueba Postman\",\n  \"ciudad\": \"Bogotá\",\n  \"direccion\": \"Calle 123 # 45-67\",\n  \"descripcion\": \"Alojamiento creado desde colección Postman.\",\n  \"admiteMascotas\": false,\n  \"tienePiscina\": true,\n  \"tieneParqueadero\": true\n}"
-            },
-            "url": {
-              "raw": "{{alojamientos_url}}/api/v1/alojamientos-lucano",
-              "host": ["{{alojamientos_url}}"],
-              "path": ["api", "v1", "alojamientos-lucano"]
-            }
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"socioId\": 1,\n  \"tipoAlojamientoId\": 1,\n  \"nombre\": \"Hotel Postman Test\",\n  \"ciudad\": \"Guayaquil\",\n  \"direccion\": \"Av. de las Americas 100\",\n  \"descripcion\": \"Creado desde Postman para pruebas exhaustivas.\",\n  \"admiteMascotas\": true,\n  \"tienePiscina\": true,\n  \"tieneParqueadero\": false\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/alojamientos", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","alojamientos"] }
           }
         },
         {
-          "name": "GET /habitaciones-lucano/alojamiento/:id - Habitaciones de alojamiento",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('✅ Status 200', () => pm.response.to.have.status(200));",
-                  "const body = pm.response.json();",
-                  "if (Array.isArray(body) && body.length > 0) {",
-                  "  pm.collectionVariables.set('habitacionId', body[0].habitacionId);",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{alojamientos_url}}/api/v1/habitaciones-lucano/alojamiento/{{alojamientoId}}",
-              "host": ["{{alojamientos_url}}"],
-              "path": ["api", "v1", "habitaciones-lucano", "alojamiento", "{{alojamientoId}}"]
-            }
-          }
-        },
-        {
-          "name": "POST /habitaciones-lucano - Crear habitación",
+          "name": "POST /alojamientos — Sin nombre (debe dar 400)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Rechaza request inválido (400)', () => pm.response.to.have.status(400));"
+          ]}}],
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"alojamientoId\": {{alojamientoId}},\n  \"nombre\": \"Habitación Deluxe Prueba\",\n  \"descripcion\": \"Habitación creada desde Postman.\",\n  \"capacidadAdultos\": 2,\n  \"capacidadNinos\": 1,\n  \"numBanos\": 1,\n  \"numDormitorios\": 1,\n  \"tieneCocina\": false,\n  \"tieneAireAcondicionado\": true,\n  \"superficieM2\": 35,\n  \"precioNoche\": 75.00\n}"
-            },
-            "url": {
-              "raw": "{{alojamientos_url}}/api/v1/habitaciones-lucano",
-              "host": ["{{alojamientos_url}}"],
-              "path": ["api", "v1", "habitaciones-lucano"]
-            }
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"socioId\": 1,\n  \"tipoAlojamientoId\": 1,\n  \"direccion\": \"Sin nombre test\"\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/alojamientos", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","alojamientos"] }
           }
         },
         {
-          "name": "GET /calendario-lucano/habitacion/:id - Disponibilidad mensual",
+          "name": "PUT /alojamientos/{id} — Actualizar",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Status 204 o 200', () => pm.expect([200,204]).to.include(pm.response.code));"
+          ]}}],
           "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{alojamientos_url}}/api/v1/calendario-lucano/habitacion/{{habitacionId}}?mes=6&anio=2026",
-              "host": ["{{alojamientos_url}}"],
-              "path": ["api", "v1", "calendario-lucano", "habitacion", "{{habitacionId}}"],
-              "query": [
-                { "key": "mes", "value": "6" },
-                { "key": "anio", "value": "2026" }
-              ]
-            }
-          }
-        },
-        {
-          "name": "GET /fotos-lucano/alojamiento/:id - Fotos de alojamiento",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{alojamientos_url}}/api/v1/fotos-lucano/alojamiento/{{alojamientoId}}",
-              "host": ["{{alojamientos_url}}"],
-              "path": ["api", "v1", "fotos-lucano", "alojamiento", "{{alojamientoId}}"]
-            }
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Hotel Postman Test (Actualizado)\",\n  \"ciudad\": \"Guayaquil\",\n  \"direccion\": \"Av. de las Americas 200\",\n  \"descripcion\": \"Actualizado desde Postman.\",\n  \"tipoAlojamientoId\": 1,\n  \"estrellas\": 4,\n  \"admiteMascotas\": true,\n  \"tienePiscina\": true,\n  \"tieneParqueadero\": true\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/alojamientos/{{alojamientoId}}", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","alojamientos","{{alojamientoId}}"] }
           }
         }
       ]
     },
+
     {
-      "name": "📋 4. Reservas (Reservas MS)",
+      "name": "🛏️ 4. Habitaciones",
       "item": [
         {
-          "name": "POST /reservas-lucano - Crear reserva",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('✅ Reserva creada (201)', () => pm.response.to.have.status(201));",
-                  "const body = pm.response.json();",
-                  "if (body && body.reservaId) {",
-                  "  pm.collectionVariables.set('reservaId', body.reservaId);",
-                  "  pm.test('✅ reservaId guardado: ' + body.reservaId, () => true);",
-                  "}"
-                ]
-              }
-            }
-          ],
+          "name": "GET /habitaciones/alojamiento/{id} — Lista (guarda habitacionId)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Status 200', () => pm.response.to.have.status(200));",
+            "const b = pm.response.json();",
+            "pm.test('✅ data es array', () => pm.expect(b.data).to.be.an('array'));",
+            "if (b.data?.length > 0) {",
+            "  pm.collectionVariables.set('habitacionId', b.data[0].habitacionId);",
+            "  pm.test('✅ habitacionId guardado: ' + b.data[0].habitacionId, () => true);",
+            "  pm.test('✅ Tiene precioNoche', () => pm.expect(b.data[0]).to.have.property('precioNoche'));",
+            "  pm.test('✅ Tiene capacidadAdultos', () => pm.expect(b.data[0]).to.have.property('capacidadAdultos'));",
+            "}"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{gateway}}{{prefix}}/habitaciones/alojamiento/{{alojamientoId}}", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","habitaciones","alojamiento","{{alojamientoId}}"] }
+          }
+        },
+        {
+          "name": "GET /habitaciones/{id} — Detalle",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Status 200', () => pm.response.to.have.status(200));",
+            "const b = pm.response.json();",
+            "pm.test('✅ Tiene habitacionId', () => pm.expect(b.data).to.have.property('habitacionId'));",
+            "pm.test('✅ Tiene precioNoche > 0', () => pm.expect(b.data.precioNoche).to.be.above(0));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{gateway}}{{prefix}}/habitaciones/{{habitacionId}}", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","habitaciones","{{habitacionId}}"] }
+          }
+        },
+        {
+          "name": "POST /habitaciones — Crear habitación",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Status 201', () => pm.response.to.have.status(201));",
+            "const b = pm.response.json();",
+            "pm.test('✅ Tiene habitacionId', () => pm.expect(b.data).to.have.property('habitacionId'));",
+            "pm.test('✅ precioNoche correcto', () => pm.expect(b.data.precioNoche).to.eql(120));"
+          ]}}],
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"clienteId\": {{clienteId}},\n  \"alojamientoId\": {{alojamientoId}},\n  \"fechaCheckIn\": \"2026-07-10\",\n  \"fechaCheckOut\": \"2026-07-15\",\n  \"numAdultos\": 2,\n  \"numNinos\": 0,\n  \"llevaMascotas\": false,\n  \"habitaciones\": [\n    {\n      \"habitacionId\": {{habitacionId}},\n      \"precioPorNoche\": 75.00,\n      \"numNoches\": 5\n    }\n  ]\n}"
-            },
-            "url": {
-              "raw": "{{reservas_url}}/api/v1/reservas-lucano",
-              "host": ["{{reservas_url}}"],
-              "path": ["api", "v1", "reservas-lucano"]
-            }
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"alojamientoId\": {{alojamientoId}},\n  \"nombre\": \"Suite Postman Deluxe\",\n  \"descripcion\": \"Habitación creada desde suite de pruebas.\",\n  \"precioNoche\": 120,\n  \"capacidadAdultos\": 2,\n  \"capacidadNinos\": 1,\n  \"numDormitorios\": 1,\n  \"numBanos\": 1,\n  \"tieneCocina\": true,\n  \"tieneAireAcondicionado\": true,\n  \"superficieM2\": 40\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/habitaciones", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","habitaciones"] }
           }
         },
         {
-          "name": "GET /reservas-lucano/:id - Consultar reserva por ID",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('✅ Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('✅ Tiene codigoReserva', () => pm.expect(pm.response.json()).to.have.property('codigoReserva'));"
-                ]
-              }
-            }
-          ],
+          "name": "POST /habitaciones — Sin precioNoche (debe dar 400)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Rechaza sin precioNoche (400)', () => pm.response.to.have.status(400));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"alojamientoId\": {{alojamientoId}},\n  \"nombre\": \"Sin precio\",\n  \"capacidadAdultos\": 2\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/habitaciones", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","habitaciones"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🖼️ 5. Fotos de Propiedades",
+      "item": [
+        {
+          "name": "GET /fotos/alojamiento/{id} — Listar fotos",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Status 200', () => pm.response.to.have.status(200));",
+            "const b = pm.response.json();",
+            "pm.test('✅ data es array', () => pm.expect(b.data).to.be.an('array'));",
+            "if (b.data?.length > 0) {",
+            "  pm.collectionVariables.set('fotoId', b.data[0].fotoId);",
+            "  pm.test('✅ Tiene url', () => pm.expect(b.data[0]).to.have.property('url'));",
+            "  pm.test('✅ URL es string no vacío', () => pm.expect(b.data[0].url).to.be.a('string').and.not.empty);",
+            "}"
+          ]}}],
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
-            "url": {
-              "raw": "{{reservas_url}}/api/v1/reservas-lucano/{{reservaId}}",
-              "host": ["{{reservas_url}}"],
-              "path": ["api", "v1", "reservas-lucano", "{{reservaId}}"]
-            }
+            "header": [],
+            "url": { "raw": "{{gateway}}{{prefix}}/fotos/alojamiento/{{alojamientoId}}", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","fotos","alojamiento","{{alojamientoId}}"] }
           }
         },
         {
-          "name": "GET /reservas-lucano/cliente/:id - Reservas del cliente",
+          "name": "POST /fotos — Registrar URL de foto (Cloudinary)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Status 201 o 200', () => pm.expect([200,201]).to.include(pm.response.code));",
+            "const b = pm.response.json();",
+            "pm.test('✅ Tiene fotoId', () => pm.expect(b.data).to.have.property('fotoId'));",
+            "pm.test('✅ URL guardada', () => pm.expect(b.data.url).to.include('cloudinary'));",
+            "if (b.data?.fotoId) pm.collectionVariables.set('fotoId', b.data.fotoId);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"alojamientoId\": {{alojamientoId}},\n  \"url\": \"https://res.cloudinary.com/dfyvvcvw3/image/upload/v1/sample.jpg\",\n  \"orden\": 1,\n  \"descripcion\": \"Foto de prueba Postman\"\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/fotos", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","fotos"] }
+          }
+        },
+        {
+          "name": "DELETE /fotos/{fotoId} — Eliminar foto",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Status 204 o 200', () => pm.expect([200,204]).to.include(pm.response.code));"
+          ]}}],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{gateway}}{{prefix}}/fotos/{{fotoId}}", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","fotos","{{fotoId}}"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "📅 6. Disponibilidad / Calendario",
+      "item": [
+        {
+          "name": "GET /calendario/habitacion/{id} — Mes actual",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Status 200', () => pm.response.to.have.status(200));",
+            "const b = pm.response.json();",
+            "pm.test('✅ data es array', () => pm.expect(b.data).to.be.an('array'));",
+            "if (b.data?.length > 0) {",
+            "  pm.test('✅ Tiene fecha', () => pm.expect(b.data[0]).to.have.property('fecha'));",
+            "  pm.test('✅ Tiene estado válido', () => pm.expect(['Disponible','Reservado','Bloqueado']).to.include(b.data[0].estado));",
+            "}"
+          ]}}],
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
-            "url": {
-              "raw": "{{reservas_url}}/api/v1/reservas-lucano/cliente/{{clienteId}}",
-              "host": ["{{reservas_url}}"],
-              "path": ["api", "v1", "reservas-lucano", "cliente", "{{clienteId}}"]
-            }
+            "header": [],
+            "url": { "raw": "{{gateway}}{{prefix}}/calendario/habitacion/{{habitacionId}}?mes=7&anio=2026", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","calendario","habitacion","{{habitacionId}}"], "query": [{ "key": "mes", "value": "7" }, { "key": "anio", "value": "2026" }] }
           }
         },
         {
-          "name": "GET /reservas-lucano/resumen/cliente/:id - Resumen ligero",
+          "name": "GET /calendario — Mes inválido (debe dar 400)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Rechaza mes inválido (400)', () => pm.response.to.have.status(400));"
+          ]}}],
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
-            "url": {
-              "raw": "{{reservas_url}}/api/v1/reservas-lucano/resumen/cliente/{{clienteId}}",
-              "host": ["{{reservas_url}}"],
-              "path": ["api", "v1", "reservas-lucano", "resumen", "cliente", "{{clienteId}}"]
-            }
+            "header": [],
+            "url": { "raw": "{{gateway}}{{prefix}}/calendario/habitacion/{{habitacionId}}?mes=13&anio=2026", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","calendario","habitacion","{{habitacionId}}"], "query": [{ "key": "mes", "value": "13" }, { "key": "anio", "value": "2026" }] }
           }
         },
         {
-          "name": "PATCH /reservas-lucano/:id/estado - Actualizar estado",
+          "name": "POST /calendario/bloquear — Bloquear rango de fechas",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Status 200', () => pm.response.to.have.status(200));",
+            "const b = pm.response.json();",
+            "pm.test('✅ data es array', () => pm.expect(b.data).to.be.an('array'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"habitacionId\": {{habitacionId}},\n  \"fechaInicio\": \"2026-12-01\",\n  \"fechaFin\": \"2026-12-03\"\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/calendario/bloquear", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","calendario","bloquear"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "📋 7. Reservas (Booking)",
+      "item": [
+        {
+          "name": "POST /booking — Crear reserva válida (guarda reservaId)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Reserva creada (201)', () => pm.response.to.have.status(201));",
+            "const b = pm.response.json();",
+            "pm.test('✅ success true', () => pm.expect(b.success).to.be.true);",
+            "pm.test('✅ Tiene codigoReserva', () => pm.expect(b.data).to.have.property('codigoReserva'));",
+            "pm.test('✅ Estado Pendiente', () => pm.expect(b.data.estado).to.eql('Pendiente'));",
+            "pm.test('✅ total > 0', () => pm.expect(b.data.total).to.be.above(0));",
+            "pm.test('✅ Tiene detallesHabitacion', () => pm.expect(b.data.detallesHabitacion).to.be.an('array').and.not.empty);",
+            "if (b.data?.reservaId) {",
+            "  pm.collectionVariables.set('reservaId', b.data.reservaId);",
+            "  pm.test('✅ reservaId guardado: ' + b.data.reservaId, () => true);",
+            "}"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"clienteId\": {{clienteId}},\n  \"alojamientoId\": {{alojamientoId}},\n  \"fechaCheckIn\": \"2026-09-10\",\n  \"fechaCheckOut\": \"2026-09-15\",\n  \"numAdultos\": 2,\n  \"numNinos\": 0,\n  \"llevaMascotas\": false,\n  \"codigoDescuento\": null,\n  \"habitaciones\": [\n    {\n      \"habitacionId\": {{habitacionId}},\n      \"precioPorNoche\": 120,\n      \"numNoches\": 5\n    }\n  ]\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/booking", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","booking"] }
+          }
+        },
+        {
+          "name": "POST /booking — Fechas solapadas misma habitación (debe dar 400)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Rechaza habitación ya reservada (400)', () => pm.response.to.have.status(400));",
+            "const b = pm.response.json();",
+            "pm.test('✅ success false', () => pm.expect(b.success).to.be.false);",
+            "pm.test('✅ Mensaje de conflicto', () => pm.expect(b.message).to.be.a('string').and.not.empty);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"clienteId\": {{clienteId}},\n  \"alojamientoId\": {{alojamientoId}},\n  \"fechaCheckIn\": \"2026-09-11\",\n  \"fechaCheckOut\": \"2026-09-14\",\n  \"numAdultos\": 1,\n  \"numNinos\": 0,\n  \"llevaMascotas\": false,\n  \"habitaciones\": [\n    {\n      \"habitacionId\": {{habitacionId}},\n      \"precioPorNoche\": 120,\n      \"numNoches\": 3\n    }\n  ]\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/booking", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","booking"] }
+          }
+        },
+        {
+          "name": "POST /booking — Sin habitaciones (debe dar 400)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Rechaza sin habitaciones (400)', () => pm.response.to.have.status(400));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"clienteId\": {{clienteId}},\n  \"alojamientoId\": {{alojamientoId}},\n  \"fechaCheckIn\": \"2026-10-01\",\n  \"fechaCheckOut\": \"2026-10-05\",\n  \"numAdultos\": 1,\n  \"numNinos\": 0,\n  \"llevaMascotas\": false,\n  \"habitaciones\": []\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/booking", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","booking"] }
+          }
+        },
+        {
+          "name": "GET /booking/{id} — Consultar reserva",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Status 200', () => pm.response.to.have.status(200));",
+            "const b = pm.response.json();",
+            "pm.test('✅ Tiene codigoReserva', () => pm.expect(b.data).to.have.property('codigoReserva'));",
+            "pm.test('✅ codigoReserva comienza con RES-', () => pm.expect(b.data.codigoReserva).to.match(/^RES-/));",
+            "pm.test('✅ Tiene total', () => pm.expect(b.data).to.have.property('total'));",
+            "pm.test('✅ Tiene estado', () => pm.expect(b.data).to.have.property('estado'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{gateway}}{{prefix}}/booking/{{reservaId}}", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","booking","{{reservaId}}"] }
+          }
+        },
+        {
+          "name": "GET /booking/9999 — ID inexistente (debe dar 404)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ No encontrado (404)', () => pm.response.to.have.status(404));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{gateway}}{{prefix}}/booking/9999", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","booking","9999"] }
+          }
+        },
+        {
+          "name": "GET /booking/cliente/{id} — Historial del cliente",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Status 200', () => pm.response.to.have.status(200));",
+            "const b = pm.response.json();",
+            "pm.test('✅ data es array', () => pm.expect(b.data).to.be.an('array'));",
+            "pm.test('✅ Al menos 1 reserva', () => pm.expect(b.data.length).to.be.above(0));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{gateway}}{{prefix}}/booking/cliente/{{clienteId}}", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","booking","cliente","{{clienteId}}"] }
+          }
+        },
+        {
+          "name": "GET /booking/resumen/cliente/{id} — Resumen ligero",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Status 200', () => pm.response.to.have.status(200));",
+            "const b = pm.response.json();",
+            "pm.test('✅ data es array', () => pm.expect(b.data).to.be.an('array'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{gateway}}{{prefix}}/booking/resumen/cliente/{{clienteId}}", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","booking","resumen","cliente","{{clienteId}}"] }
+          }
+        },
+        {
+          "name": "PATCH /booking/{id}/estado → Confirmada",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Estado actualizado (204)', () => pm.response.to.have.status(204));"
+          ]}}],
           "request": {
             "method": "PATCH",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"estado\": \"Confirmada\"\n}"
-            },
-            "url": {
-              "raw": "{{reservas_url}}/api/v1/reservas-lucano/{{reservaId}}/estado",
-              "host": ["{{reservas_url}}"],
-              "path": ["api", "v1", "reservas-lucano", "{{reservaId}}", "estado"]
-            }
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"estado\": \"Confirmada\"\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/booking/{{reservaId}}/estado", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","booking","{{reservaId}}","estado"] }
+          }
+        },
+        {
+          "name": "PATCH /booking/{id}/estado → Cancelada",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Cancelada (204)', () => pm.response.to.have.status(204));"
+          ]}}],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"estado\": \"Cancelada\"\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/booking/{{reservaId}}/estado", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","booking","{{reservaId}}","estado"] }
+          }
+        },
+        {
+          "name": "PATCH /booking/{id}/estado — Estado inválido (debe dar 400)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Rechaza estado inválido (400)', () => pm.response.to.have.status(400));"
+          ]}}],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"estado\": \"EstadoQueNoExiste\"\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/booking/{{reservaId}}/estado", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","booking","{{reservaId}}","estado"] }
           }
         }
       ]
     },
+
     {
-      "name": "💳 5. Facturación (Facturacion MS)",
+      "name": "💳 8. Facturación",
       "item": [
         {
-          "name": "GET /metodospago-lucano - Métodos de pago disponibles",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('✅ Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('✅ Es un array', () => pm.expect(pm.response.json()).to.be.an('array'));"
-                ]
-              }
-            }
-          ],
+          "name": "GET /metodospago — Métodos disponibles",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Status 200', () => pm.response.to.have.status(200));",
+            "const b = pm.response.json();",
+            "pm.test('✅ data es array', () => pm.expect(b.data).to.be.an('array'));",
+            "pm.test('✅ Al menos 1 método', () => pm.expect(b.data.length).to.be.above(0));",
+            "pm.test('✅ Tiene tipo', () => pm.expect(b.data[0]).to.have.property('tipo'));"
+          ]}}],
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{facturacion_url}}/api/v1/metodospago-lucano",
-              "host": ["{{facturacion_url}}"],
-              "path": ["api", "v1", "metodospago-lucano"]
-            }
+            "url": { "raw": "{{gateway}}{{prefix}}/metodospago", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","metodospago"] }
           }
         },
         {
-          "name": "GET /facturas-lucano/reserva/:id - Factura por reserva",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('✅ Status 200 o 404', () => pm.expect([200, 404]).to.include(pm.response.code));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
-            "url": {
-              "raw": "{{facturacion_url}}/api/v1/facturas-lucano/reserva/{{reservaId}}",
-              "host": ["{{facturacion_url}}"],
-              "path": ["api", "v1", "facturas-lucano", "reserva", "{{reservaId}}"]
-            }
-          }
-        },
-        {
-          "name": "POST /facturas-lucano - Aprobar/Crear factura",
+          "name": "POST /facturas — Crear factura para reserva",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Status 201', () => pm.response.to.have.status(201));",
+            "const b = pm.response.json();",
+            "pm.test('✅ Tiene facturaId', () => pm.expect(b.data).to.have.property('facturaId'));",
+            "pm.test('✅ Estado Aprobado', () => pm.expect(b.data.estado).to.eql('Aprobado'));",
+            "pm.test('✅ monto > 0', () => pm.expect(b.data.monto).to.be.above(0));",
+            "if (b.data?.facturaId) pm.collectionVariables.set('facturaId', b.data.facturaId);"
+          ]}}],
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"reservaId\": {{reservaId}},\n  \"metodoPagoId\": 1,\n  \"monto\": 375.00,\n  \"detalles\": [\n    {\n      \"descripcion\": \"Pago de 5 noches - Habitación Deluxe\",\n      \"cantidad\": 1,\n      \"precioUnitario\": 375.00\n    }\n  ]\n}"
-            },
-            "url": {
-              "raw": "{{facturacion_url}}/api/v1/facturas-lucano",
-              "host": ["{{facturacion_url}}"],
-              "path": ["api", "v1", "facturas-lucano"]
-            }
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"reservaId\": {{reservaId}},\n  \"metodoPagoId\": 1,\n  \"monto\": 600.00,\n  \"detalles\": [\n    {\n      \"descripcion\": \"5 noches - Suite Postman Deluxe\",\n      \"cantidad\": 1,\n      \"precioUnitario\": 600.00\n    }\n  ]\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/facturas", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","facturas"] }
+          }
+        },
+        {
+          "name": "POST /facturas — Reserva ya facturada (debe dar 400)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Rechaza doble factura (400)', () => pm.response.to.have.status(400));",
+            "const b = pm.response.json();",
+            "pm.test('✅ success false', () => pm.expect(b.success).to.be.false);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"reservaId\": {{reservaId}},\n  \"metodoPagoId\": 2,\n  \"monto\": 600.00,\n  \"detalles\": [\n    {\n      \"descripcion\": \"Intento de pago duplicado\",\n      \"cantidad\": 1,\n      \"precioUnitario\": 600.00\n    }\n  ]\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/facturas", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","facturas"] }
+          }
+        },
+        {
+          "name": "GET /facturas/reserva/{id} — Comprobante de pago",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Status 200', () => pm.response.to.have.status(200));",
+            "const b = pm.response.json();",
+            "pm.test('✅ Tiene facturaId', () => pm.expect(b.data).to.have.property('facturaId'));",
+            "pm.test('✅ Tiene metodoPago', () => pm.expect(b.data).to.have.property('metodoPago'));",
+            "pm.test('✅ Estado Aprobado', () => pm.expect(b.data.estado).to.eql('Aprobado'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{gateway}}{{prefix}}/facturas/reserva/{{reservaId}}", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","facturas","reserva","{{reservaId}}"] }
+          }
+        },
+        {
+          "name": "GET /facturas/reserva/9999 — Sin factura (debe dar 404)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ No encontrada (404)', () => pm.response.to.have.status(404));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{gateway}}{{prefix}}/facturas/reserva/9999", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","facturas","reserva","9999"] }
+          }
+        },
+        {
+          "name": "GET /facturas/resumen/reserva/{id} — Resumen liviano",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ Status 200 o 404', () => pm.expect([200,404]).to.include(pm.response.code));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{gateway}}{{prefix}}/facturas/resumen/reserva/{{reservaId}}", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","facturas","resumen","reserva","{{reservaId}}"] }
           }
         }
       ]
     },
+
     {
-      "name": "🚪 6. Via API Gateway (Flujo Integrado)",
+      "name": "🔄 9. Flujo E2E Completo (Booking)",
+      "description": "Ejecutar este folder con Collection Runner en orden. Simula el flujo completo de un huésped nuevo que reserva, paga y cancela.",
       "item": [
         {
-          "name": "GET /alojamientos-lucano via Gateway",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('✅ Gateway enruta correctamente (200)', () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{gateway_url}}/api/v1/alojamientos-lucano",
-              "host": ["{{gateway_url}}"],
-              "path": ["api", "v1", "alojamientos-lucano"]
-            }
-          }
-        },
-        {
-          "name": "POST /booking-lucano via Gateway - Crear Reserva",
+          "name": "E2E 1 — Login admin",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('[E2E-1] ✅ Login exitoso', () => pm.response.to.have.status(200));",
+            "const b = pm.response.json();",
+            "if (b.token) pm.collectionVariables.set('token', b.token);"
+          ]}}],
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"clienteId\": {{clienteId}},\n  \"alojamientoId\": {{alojamientoId}},\n  \"fechaCheckIn\": \"2026-08-01\",\n  \"fechaCheckOut\": \"2026-08-05\",\n  \"numAdultos\": 2,\n  \"numNinos\": 0,\n  \"llevaMascotas\": false,\n  \"habitaciones\": [\n    {\n      \"habitacionId\": {{habitacionId}},\n      \"precioPorNoche\": 75.00,\n      \"numNoches\": 4\n    }\n  ]\n}"
-            },
-            "url": {
-              "raw": "{{gateway_url}}/api/v1/booking-lucano",
-              "host": ["{{gateway_url}}"],
-              "path": ["api", "v1", "booking-lucano"]
-            }
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@alojamiento.com\",\n  \"password\": \"Admin12345!\"\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/auth/login", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","auth","login"] }
           }
         },
         {
-          "name": "GET /booking-lucano/:id via Gateway",
+          "name": "E2E 2 — Listar alojamientos",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('[E2E-2] ✅ Catálogo disponible', () => pm.response.to.have.status(200));",
+            "const b = pm.response.json();",
+            "pm.test('[E2E-2] ✅ Hay propiedades', () => pm.expect(b.data.length).to.be.above(0));",
+            "pm.collectionVariables.set('alojamientoId', b.data[0].alojamientoId);"
+          ]}}],
           "request": {
-            "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
-            "url": {
-              "raw": "{{gateway_url}}/api/v1/booking-lucano/{{reservaId}}",
-              "host": ["{{gateway_url}}"],
-              "path": ["api", "v1", "booking-lucano", "{{reservaId}}"]
-            }
+            "method": "GET", "header": [],
+            "url": { "raw": "{{gateway}}{{prefix}}/alojamientos", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","alojamientos"] }
+          }
+        },
+        {
+          "name": "E2E 3 — Obtener habitaciones",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('[E2E-3] ✅ Habitaciones obtenidas', () => pm.response.to.have.status(200));",
+            "const b = pm.response.json();",
+            "pm.test('[E2E-3] ✅ Hay habitaciones', () => pm.expect(b.data.length).to.be.above(0));",
+            "pm.collectionVariables.set('habitacionId', b.data[0].habitacionId);"
+          ]}}],
+          "request": {
+            "method": "GET", "header": [],
+            "url": { "raw": "{{gateway}}{{prefix}}/habitaciones/alojamiento/{{alojamientoId}}", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","habitaciones","alojamiento","{{alojamientoId}}"] }
+          }
+        },
+        {
+          "name": "E2E 4 — Verificar disponibilidad",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('[E2E-4] ✅ Calendario disponible', () => pm.response.to.have.status(200));",
+            "const b = pm.response.json();",
+            "const disponibles = b.data?.filter(d => d.estado === 'Disponible') || [];",
+            "pm.test('[E2E-4] ✅ Hay días disponibles en octubre', () => pm.expect(disponibles.length).to.be.above(0));"
+          ]}}],
+          "request": {
+            "method": "GET", "header": [],
+            "url": { "raw": "{{gateway}}{{prefix}}/calendario/habitacion/{{habitacionId}}?mes=10&anio=2026", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","calendario","habitacion","{{habitacionId}}"], "query": [{ "key": "mes", "value": "10" }, { "key": "anio", "value": "2026" }] }
+          }
+        },
+        {
+          "name": "E2E 5 — Métodos de pago",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('[E2E-5] ✅ Métodos de pago disponibles', () => pm.response.to.have.status(200));",
+            "pm.test('[E2E-5] ✅ Al menos 1 método', () => pm.expect(pm.response.json().data.length).to.be.above(0));"
+          ]}}],
+          "request": {
+            "method": "GET", "header": [],
+            "url": { "raw": "{{gateway}}{{prefix}}/metodospago", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","metodospago"] }
+          }
+        },
+        {
+          "name": "E2E 6 — Crear reserva",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('[E2E-6] ✅ Reserva creada (201)', () => pm.response.to.have.status(201));",
+            "const b = pm.response.json();",
+            "pm.test('[E2E-6] ✅ Estado Pendiente', () => pm.expect(b.data.estado).to.eql('Pendiente'));",
+            "pm.test('[E2E-6] ✅ Total calculado', () => pm.expect(b.data.total).to.eql(360));",
+            "pm.collectionVariables.set('reservaId', b.data.reservaId);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"clienteId\": {{clienteId}},\n  \"alojamientoId\": {{alojamientoId}},\n  \"fechaCheckIn\": \"2026-10-10\",\n  \"fechaCheckOut\": \"2026-10-13\",\n  \"numAdultos\": 2,\n  \"numNinos\": 0,\n  \"llevaMascotas\": false,\n  \"habitaciones\": [\n    { \"habitacionId\": {{habitacionId}}, \"precioPorNoche\": 120, \"numNoches\": 3 }\n  ]\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/booking", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","booking"] }
+          }
+        },
+        {
+          "name": "E2E 7 — Confirmar reserva",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('[E2E-7] ✅ Estado → Confirmada (204)', () => pm.response.to.have.status(204));"
+          ]}}],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"estado\": \"Confirmada\"\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/booking/{{reservaId}}/estado", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","booking","{{reservaId}}","estado"] }
+          }
+        },
+        {
+          "name": "E2E 8 — Crear factura (pago)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('[E2E-8] ✅ Factura creada (201)', () => pm.response.to.have.status(201));",
+            "const b = pm.response.json();",
+            "pm.test('[E2E-8] ✅ Estado Aprobado', () => pm.expect(b.data.estado).to.eql('Aprobado'));",
+            "pm.collectionVariables.set('facturaId', b.data.facturaId);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"reservaId\": {{reservaId}},\n  \"metodoPagoId\": 1,\n  \"monto\": 360.00,\n  \"detalles\": [\n    { \"descripcion\": \"3 noches E2E test\", \"cantidad\": 1, \"precioUnitario\": 360.00 }\n  ]\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/facturas", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","facturas"] }
+          }
+        },
+        {
+          "name": "E2E 9 — Marcar como Completada",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('[E2E-9] ✅ Estado → Completada (204)', () => pm.response.to.have.status(204));"
+          ]}}],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"estado\": \"Completada\"\n}" },
+            "url": { "raw": "{{gateway}}{{prefix}}/booking/{{reservaId}}/estado", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","booking","{{reservaId}}","estado"] }
+          }
+        },
+        {
+          "name": "E2E 10 — Verificar comprobante final",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('[E2E-10] ✅ Comprobante encontrado (200)', () => pm.response.to.have.status(200));",
+            "const b = pm.response.json();",
+            "pm.test('[E2E-10] ✅ Factura con monto correcto', () => pm.expect(b.data.monto).to.eql(360));",
+            "pm.test('[E2E-10] ✅ Método de pago CREDITO', () => pm.expect(b.data.metodoPago).to.eql('CREDITO'));",
+            "pm.test('[E2E-10] ✅ FLUJO COMPLETO OK ✅', () => pm.expect(b.success).to.be.true);"
+          ]}}],
+          "request": {
+            "method": "GET", "header": [],
+            "url": { "raw": "{{gateway}}{{prefix}}/facturas/reserva/{{reservaId}}", "host": ["{{gateway}}"], "path": ["api","v1","naomy-analuisa","facturas","reserva","{{reservaId}}"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🔧 10. Acceso Directo a Microservicios (Debug)",
+      "description": "Para diagnóstico directo. Útil si el Gateway falla. NO usar para integración.",
+      "item": [
+        {
+          "name": "GET Alojamientos MS — Health check",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('✅ MS Alojamientos responde', () => pm.expect([200,404]).to.include(pm.response.code));"
+          ]}}],
+          "request": {
+            "method": "GET", "header": [],
+            "url": { "raw": "{{aloj_ms}}/api/v1/alojamientosanaluisa", "host": ["{{aloj_ms}}"], "path": ["api","v1","alojamientosanaluisa"] }
+          }
+        },
+        {
+          "name": "GET Reservas MS — Por ID directo",
+          "request": {
+            "method": "GET", "header": [],
+            "url": { "raw": "{{reservas_ms}}/api/v1/reservasanaluisa/{{reservaId}}", "host": ["{{reservas_ms}}"], "path": ["api","v1","reservasanaluisa","{{reservaId}}"] }
+          }
+        },
+        {
+          "name": "GET Facturación MS — Health check",
+          "request": {
+            "method": "GET", "header": [],
+            "url": { "raw": "{{facturacion_ms}}/api/v1/metodospagoanaluisa", "host": ["{{facturacion_ms}}"], "path": ["api","v1","metodospagoanaluisa"] }
           }
         }
       ]
     }
+
   ]
 }
