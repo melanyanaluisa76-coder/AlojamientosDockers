@@ -1,17 +1,4 @@
-using ApiGateway.Models;
-
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new()
-    {
-        Title = "AlojamientoMR — API Gateway (naomy-analuisa)",
-        Version = "v3.1.0",
-        Description = "Prefijo de integración: /api/v1/naomy-analuisa/ — Ver contrato completo en alojamiento-booking-integration-contract-analuisa.yaml"
-    });
-});
 
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
@@ -25,10 +12,11 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 app.UseCors("AllowAll");
-app.UseSwagger();
+app.UseStaticFiles();
 app.UseSwaggerUI(c =>
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "AlojamientoMR Gateway v3.1.0");
+    c.SwaggerEndpoint("/contract.yaml", "AlojamientoMR Gateway v3.1.0");
+    c.RoutePrefix = "swagger";
 });
 
 // YARP intercepta todas las rutas configuradas en appsettings.json

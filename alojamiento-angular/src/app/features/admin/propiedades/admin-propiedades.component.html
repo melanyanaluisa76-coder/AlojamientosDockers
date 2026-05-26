@@ -97,6 +97,7 @@
               <th>Tipo</th>
               <th>Estado</th>
               <th>Pet-Friendly</th>
+              <th>Fotos</th>
             </tr>
           </thead>
           <tbody>
@@ -117,7 +118,65 @@
                     <span class="badge badge-danger">No</span>
                   }
                 </td>
+                <td>
+                  <button mat-icon-button
+                    [color]="fotoPropId() === p.alojamientoId ? 'primary' : ''"
+                    (click)="abrirFotos(p.alojamientoId)"
+                    matTooltip="Gestionar fotos">
+                    <mat-icon>photo_library</mat-icon>
+                  </button>
+                </td>
               </tr>
+
+              <!-- Panel de fotos inline -->
+              @if (fotoPropId() === p.alojamientoId) {
+                <tr class="foto-panel-row">
+                  <td colspan="6">
+                    <div class="foto-panel">
+                      <div class="foto-panel-header">
+                        <span class="foto-panel-title">
+                          <mat-icon>image</mat-icon> Fotos de {{ p.nombre }}
+                        </span>
+                        <label class="upload-btn" [class.disabled]="uploading()">
+                          @if (uploading()) {
+                            <mat-spinner diameter="18" />
+                            Subiendo...
+                          } @else {
+                            <mat-icon>upload</mat-icon>
+                            Subir foto
+                          }
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            style="display:none"
+                            [disabled]="uploading()"
+                            (change)="onFileSelected($event, p.alojamientoId)"
+                          />
+                        </label>
+                      </div>
+
+                      @if (fotos().length === 0) {
+                        <p class="foto-empty">Esta propiedad no tiene fotos aún. Sube la primera.</p>
+                      } @else {
+                        <div class="foto-grid">
+                          @for (f of fotos(); track f.fotoId) {
+                            <div class="foto-thumb">
+                              <img [src]="f.url" [alt]="f.descripcion ?? 'Foto'" />
+                              <button
+                                class="foto-delete"
+                                (click)="eliminarFoto(f.fotoId)"
+                                type="button"
+                                aria-label="Eliminar foto">
+                                <mat-icon>delete</mat-icon>
+                              </button>
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
             }
           </tbody>
         </table>

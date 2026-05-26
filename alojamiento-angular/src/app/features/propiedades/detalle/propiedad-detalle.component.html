@@ -10,12 +10,33 @@
     </div>
   } @else {
 
-    <!-- ── Encabezado ──────────────────────────────────────────────────── -->
+    <!-- ── Encabezado / Gallery ─────────────────────────────────────── -->
     <div class="prop-banner">
-      <div class="banner-overlay">
-        <mat-icon class="banner-icon">apartment</mat-icon>
-        <span class="banner-city">{{ propiedad()!.ciudad }}</span>
-      </div>
+      @if (fotos().length > 0) {
+        <img
+          class="banner-img"
+          [src]="fotos()[galleryIdx()].url"
+          [alt]="fotos()[galleryIdx()].descripcion ?? propiedad()!.nombre"
+        />
+        @if (fotos().length > 1) {
+          <button class="gallery-btn gallery-prev" (click)="prevPhoto()" type="button" aria-label="Anterior">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <button class="gallery-btn gallery-next" (click)="nextPhoto()" type="button" aria-label="Siguiente">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+          <div class="gallery-dots">
+            @for (f of fotos(); track f.fotoId; let i = $index) {
+              <span class="gallery-dot" [class.active]="i === galleryIdx()" (click)="galleryIdx.set(i)"></span>
+            }
+          </div>
+        }
+      } @else {
+        <div class="banner-overlay">
+          <mat-icon class="banner-icon">apartment</mat-icon>
+          <span class="banner-city">{{ propiedad()!.ciudad }}</span>
+        </div>
+      }
       @if (propiedad()!.admiteMascotas) {
         <span class="pet-chip">Pet-Friendly</span>
       }

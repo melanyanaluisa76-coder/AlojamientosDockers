@@ -15,8 +15,9 @@ import { ReservasService } from '../../../services/reservas.service';
 import { AuthStore } from '../../../core/store/auth.store';
 import { NotificationService } from '../../../core/services/notification.service';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
-import { PropiedadItem, HabitacionItem } from '../../../core/models/alojamiento.model';
+import { PropiedadItem, HabitacionItem, FotoItem } from '../../../core/models/alojamiento.model';
 import { ReservaResponse } from '../../../core/models/reserva.model';
+import { FotosService } from '../../../services/fotos.service';
 
 @Component({
   selector: 'app-propiedad-detalle',
@@ -36,11 +37,14 @@ export class PropiedadDetalleComponent implements OnInit {
   private readonly fb       = inject(FormBuilder);
   private readonly alojSvc  = inject(AlojamientosService);
   private readonly resvSvc  = inject(ReservasService);
+  private readonly fotosSvc = inject(FotosService);
   readonly authStore         = inject(AuthStore);
   private readonly notify   = inject(NotificationService);
 
   readonly propiedad      = signal<PropiedadItem | null>(null);
   readonly habitaciones   = signal<HabitacionItem[]>([]);
+  readonly fotos          = signal<FotoItem[]>([]);
+  readonly galleryIdx     = signal(0);
   readonly loading        = signal(true);
   readonly submitting     = signal(false);
   readonly selectedRooms  = signal<Set<number>>(new Set());
@@ -83,6 +87,12 @@ export class PropiedadDetalleComponent implements OnInit {
       complete: () => this.loading.set(false),
       error: () => this.loading.set(false),
     });
+    this.fotosSvc.getFotosByAlojamiento(id).subscribe({
+      next: r => {
+        const sorted = (r.data ?? []).sort((a, b) => a.orden - b.orden);
+        this.fotos.set(sorted);
+      },
+    });
 
     const clienteId = this.authStore.user()?.clienteId;
     if (clienteId) {
@@ -90,6 +100,14 @@ export class PropiedadDetalleComponent implements OnInit {
         next: r => this.existingReservas.set(r.data ?? []),
       });
     }
+  }
+
+  prevPhoto(): void {
+    this.galleryIdx.update(i => (i - 1 + this.fotos().length) % this.fotos().length);
+  }
+
+  nextPhoto(): void {
+    this.galleryIdx.update(i => (i + 1) % this.fotos().length);
   }
 
   toggleRoom(id: number): void {

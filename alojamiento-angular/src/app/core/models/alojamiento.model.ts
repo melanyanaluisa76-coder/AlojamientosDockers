@@ -1,3 +1,11 @@
+export interface FotoItem {
+  fotoId: number;
+  alojamientoId: number;
+  url: string;
+  orden: number;
+  descripcion?: string | null;
+}
+
 export interface PropiedadItem {
   alojamientoId: number;
   socioId?: number;

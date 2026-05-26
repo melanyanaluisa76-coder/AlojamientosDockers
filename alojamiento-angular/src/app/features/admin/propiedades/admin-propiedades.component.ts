@@ -8,11 +8,13 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AlojamientosService } from '../../../services/alojamientos.service';
-import { AuthStore } from '../../../core/store/auth.store';
+import { FotosService } from '../../../services/fotos.service';
+import { CloudinaryService } from '../../../services/cloudinary.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
-import { PropiedadItem } from '../../../core/models/alojamiento.model';
+import { PropiedadItem, FotoItem } from '../../../core/models/alojamiento.model';
 
 const TIPOS_ALOJAMIENTO = [
   { id: 1, nombre: 'Hotel' },
@@ -29,22 +31,28 @@ const TIPOS_ALOJAMIENTO = [
     ReactiveFormsModule,
     MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatCheckboxModule, MatDividerModule, MatTooltipModule,
+    MatProgressSpinnerModule,
     LoadingSpinnerComponent,
   ],
   templateUrl: './admin-propiedades.component.html',
   styleUrl: './admin-propiedades.component.scss',
 })
 export class AdminPropiedadesComponent implements OnInit {
-  private readonly svc    = inject(AlojamientosService);
-  private readonly auth   = inject(AuthStore);
-  private readonly notify = inject(NotificationService);
-  private readonly fb     = inject(FormBuilder);
+  private readonly svc        = inject(AlojamientosService);
+  private readonly fotosSvc   = inject(FotosService);
+  private readonly cloudinary = inject(CloudinaryService);
+  private readonly notify     = inject(NotificationService);
+  private readonly fb         = inject(FormBuilder);
 
-  readonly propiedades   = signal<PropiedadItem[]>([]);
+  readonly propiedades      = signal<PropiedadItem[]>([]);
   readonly tiposAlojamiento = TIPOS_ALOJAMIENTO;
-  readonly loading       = signal(true);
-  readonly submitting    = signal(false);
-  readonly showForm      = signal(false);
+  readonly loading          = signal(true);
+  readonly submitting       = signal(false);
+  readonly showForm         = signal(false);
+
+  readonly fotoPropId   = signal<number | null>(null);
+  readonly fotos        = signal<FotoItem[]>([]);
+  readonly uploading    = signal(false);
 
   readonly propForm = this.fb.group({
     nombre:            ['', [Validators.required, Validators.minLength(3)]],
@@ -98,5 +106,57 @@ export class AdminPropiedadesComponent implements OnInit {
     });
   }
 
-  stars(n: number): number[] { return Array.from({ length: 5 }, (_, i) => i); }
+  // ── Gestión de fotos ─────────────────────────────────────────────────────
+
+  abrirFotos(propId: number): void {
+    if (this.fotoPropId() === propId) { this.fotoPropId.set(null); return; }
+    this.fotoPropId.set(propId);
+    this.fotos.set([]);
+    this.fotosSvc.getFotosByAlojamiento(propId).subscribe({
+      next: r => this.fotos.set((r.data ?? []).sort((a, b) => a.orden - b.orden)),
+    });
+  }
+
+  onFileSelected(event: Event, propId: number): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowed.includes(file.type)) {
+      this.notify.error('Solo se permiten imágenes JPG, PNG o WebP.');
+      return;
+    }
+
+    this.uploading.set(true);
+    this.cloudinary.uploadImage(file).subscribe({
+      next: result => {
+        this.fotosSvc.agregarFoto({
+          alojamientoId: propId,
+          url: result.secure_url,
+          orden: this.fotos().length,
+        }).subscribe({
+          next: r => {
+            this.fotos.update(list => [...list, r.data]);
+            this.notify.success('Foto subida correctamente.');
+          },
+          error: () => this.notify.error('Error al guardar la foto en el servidor.'),
+          complete: () => this.uploading.set(false),
+        });
+      },
+      error: () => {
+        this.notify.error('Error al subir la imagen a Cloudinary. Verifica el upload preset.');
+        this.uploading.set(false);
+      },
+    });
+  }
+
+  eliminarFoto(fotoId: number): void {
+    this.fotosSvc.eliminarFoto(fotoId).subscribe({
+      next: () => {
+        this.fotos.update(list => list.filter(f => f.fotoId !== fotoId));
+        this.notify.success('Foto eliminada.');
+      },
+      error: () => this.notify.error('Error al eliminar la foto.'),
+    });
+  }
 }
