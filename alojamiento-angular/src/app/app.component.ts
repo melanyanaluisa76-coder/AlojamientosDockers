@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { RealtimeService } from './core/services/realtime.service';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -7,4 +9,10 @@ import { RouterOutlet } from '@angular/router';
   imports: [RouterOutlet],
   template: `<router-outlet />`,
 })
-export class AppComponent {}
+export class AppComponent implements OnInit {
+  private realtime = inject(RealtimeService);
+
+  ngOnInit(): void {
+    this.realtime.connect(environment.gatewayUrl);
+  }
+}
