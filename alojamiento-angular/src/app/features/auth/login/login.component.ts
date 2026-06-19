@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { catchError, of } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -47,9 +48,20 @@ export class LoginComponent {
     this.svc.login({ email: email!, password: password! }).subscribe({
       next: res => {
         this.authStore.login(res.data);
-        this.notify.success(`¡Bienvenido, ${res.data.nombreCompleto}!`);
-        const target = this.authStore.hasAdminAccess() ? '/admin' : '/propiedades';
-        this.router.navigate([target]);
+        const navigate = () => {
+          this.notify.success(`¡Bienvenido, ${res.data.nombreCompleto}!`);
+          this.router.navigate([this.authStore.hasAdminAccess() ? '/admin' : '/propiedades']);
+        };
+        // Sección 9.3 del contrato: si clienteId viene null para un Cliente, buscar por email
+        if (!res.data.clienteId && res.data.roles?.includes('Cliente')) {
+          this.svc.getClientes().pipe(catchError(() => of(null))).subscribe(clientes => {
+            const found = clientes?.data?.find(c => c.email === res.data.email);
+            if (found?.clienteId) this.authStore.setClienteId(found.clienteId);
+            navigate();
+          });
+        } else {
+          navigate();
+        }
       },
       error: err => {
         const msg = err.error?.message ?? 'Credenciales inválidas.';

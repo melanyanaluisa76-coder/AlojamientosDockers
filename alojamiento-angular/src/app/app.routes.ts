@@ -76,6 +76,10 @@ export const routes: Routes = [
         path: 'reservas',
         loadComponent: () => import('./features/admin/reservas/admin-reservas.component').then(m => m.AdminReservasComponent),
       },
+      {
+        path: 'facturas',
+        loadComponent: () => import('./features/admin/facturas/admin-facturas.component').then(m => m.AdminFacturasComponent),
+      },
     ],
   },
 

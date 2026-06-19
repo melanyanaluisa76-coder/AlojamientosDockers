@@ -1,0 +1,20 @@
+.table-wrapper { overflow-x: auto; }
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th, td {
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color, #e0e0e0);
+    font-size: 0.875rem;
+  }
+
+  th { font-weight: 600; color: var(--text-muted, #666); }
+
+  tr:hover td { background: var(--surface-hover, #f5f5f5); }
+}
+
+.actions-cell { white-space: nowrap; }
+.mono { font-family: monospace; font-size: 0.8rem; }

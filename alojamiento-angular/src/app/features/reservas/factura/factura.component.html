@@ -112,7 +112,7 @@
             }
             <div class="detail-item">
               <span class="detail-label">Monto pagado</span>
-              <span class="detail-value">{{ factura()!.monto | currency:'USD':'symbol':'1.2-2' }}</span>
+              <span class="detail-value">{{ (factura()!.monto || reserva()!.total || 0) | currency:'USD':'symbol':'1.2-2' }}</span>
             </div>
             @if (factura()!.fechaPago) {
               <div class="detail-item">

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Reservas.DataAccess.Contexts;
 using Reservas.API.Extensions;
+using Reservas.API.Filters;
 using Reservas.API.Middleware;
 using MassTransit;
 
@@ -16,6 +17,10 @@ builder.Services.AddDbContext<ReservasDbContext>(options =>
 
 // ── 2. Dependencias de la Aplicación ─────────────────
 builder.Services.AddApplicationServices(builder.Configuration);
+
+// ── Caché en memoria para IdempotencyFilter ───────────
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<IdempotencyFilter>();
 
 // ── Event Bus (MassTransit + RabbitMQ / CloudAMQP) ───
 builder.Services.AddMassTransit(x =>

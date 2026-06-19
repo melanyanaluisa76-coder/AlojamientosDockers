@@ -51,6 +51,14 @@ export class AuthStore {
     this._user.set(user);
   }
 
+  setClienteId(clienteId: number): void {
+    const user = this._user();
+    if (!user) return;
+    const updated = { ...user, clienteId };
+    localStorage.setItem(USER_KEY, JSON.stringify(updated));
+    this._user.set(updated);
+  }
+
   logout(): void {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);

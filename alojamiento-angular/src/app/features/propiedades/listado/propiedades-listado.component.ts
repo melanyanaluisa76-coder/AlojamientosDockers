@@ -29,6 +29,7 @@ export class PropiedadesListadoComponent implements OnInit {
 
   readonly propiedades = signal<PropiedadItem[]>([]);
   readonly loading     = signal(true);
+  readonly error       = signal(false);
   readonly totalItems  = signal(0);
 
   readonly filterForm = this.fb.group({
@@ -52,13 +53,14 @@ export class PropiedadesListadoComponent implements OnInit {
 
   buscar(): void {
     this.loading.set(true);
+    this.error.set(false);
     this.svc.getAlojamientos().subscribe({
       next: r => {
         const items = r.data ?? [];
         this.propiedades.set(Array.isArray(items) ? items : []);
         this.totalItems.set(this.propiedades().length);
       },
-      error: () => this.loading.set(false),
+      error: () => { this.loading.set(false); this.error.set(true); },
       complete: () => this.loading.set(false),
     });
   }

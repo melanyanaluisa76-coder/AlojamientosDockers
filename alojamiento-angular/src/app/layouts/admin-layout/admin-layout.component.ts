@@ -40,6 +40,7 @@ export class AdminLayoutComponent {
     { label: 'Propiedades',   icon: 'apartment',            route: '/admin/propiedades' },
     { label: 'Habitaciones',  icon: 'king_bed',             route: '/admin/habitaciones' },
     { label: 'Reservas',      icon: 'event_available',      route: '/admin/reservas' },
+    { label: 'Facturas',      icon: 'receipt_long',         route: '/admin/facturas' },
     { label: 'Usuarios',      icon: 'manage_accounts',      route: '/admin/usuarios',      adminOnly: true },
     { label: 'Colaboradores', icon: 'business',             route: '/admin/colaboradores', adminOnly: true },
   ];

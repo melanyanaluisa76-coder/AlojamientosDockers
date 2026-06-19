@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Facturacion.DataAccess.Contexts;
 using Facturacion.DataAccess.Entities;
+using Facturacion.API.Consumers;
 using Facturacion.API.Extensions;
 using Facturacion.API.Middleware;
 using MassTransit;
@@ -21,6 +22,9 @@ builder.Services.AddApplicationServices();
 // ── Event Bus (MassTransit + RabbitMQ) ───────────────
 builder.Services.AddMassTransit(x =>
 {
+    // Consume ReservaCreadaEvent para generar factura draft automáticamente
+    x.AddConsumer<ReservaCreadaConsumer>();
+
     x.UsingRabbitMq((context, cfg) =>
     {
         // Se espera "amqps://user:pass@host/vhost" desde appsettings.json o variables de entorno

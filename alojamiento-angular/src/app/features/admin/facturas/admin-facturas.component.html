@@ -1,0 +1,111 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="section-title">Gestión de Facturas</h1>
+      <p class="text-sm text-muted">{{ filtered().length }} factura(s)</p>
+    </div>
+    <button mat-flat-button color="primary" (click)="cargar()">
+      <mat-icon>refresh</mat-icon> Actualizar
+    </button>
+  </div>
+
+  <!-- Filtros -->
+  <form [formGroup]="filterForm" class="filter-bar">
+    <mat-form-field appearance="outline" class="filter-field flex-2">
+      <mat-label>Buscar por ID o reserva</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput formControlName="search" placeholder="Ej: 42 o RES-42-..." />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>Estado</mat-label>
+      <mat-select formControlName="estado">
+        <mat-option value="">Todos</mat-option>
+        @for (e of estadosOptions; track e) {
+          <mat-option [value]="e">{{ e }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </form>
+
+  <!-- Spinner / Error / Lista -->
+  @if (loading()) {
+    <app-loading-spinner message="Cargando facturas..." />
+  } @else if (error()) {
+    <div class="empty-state">
+      <mat-icon style="font-size:3rem;height:3rem;width:3rem;color:#f44336">wifi_off</mat-icon>
+      <h3>No se pudo cargar las facturas</h3>
+      <p>El microservicio de facturación podría estar iniciando. Intenta de nuevo.</p>
+      <button mat-flat-button color="primary" (click)="cargar()">
+        <mat-icon>refresh</mat-icon> Reintentar
+      </button>
+    </div>
+  } @else if (filtered().length === 0) {
+    <div class="empty-state">
+      <mat-icon style="font-size:3rem;height:3rem;width:3rem">receipt_long</mat-icon>
+      <h3>No hay facturas</h3>
+      <p>Las facturas se generan automáticamente al crear una reserva (flujo V2).</p>
+    </div>
+  } @else {
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Reserva</th>
+            <th>Monto</th>
+            <th>Método Pago</th>
+            <th>Fecha Creación</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (f of filtered(); track f.facturaId) {
+            <tr>
+              <td class="mono">#{{ f.facturaId }}</td>
+              <td class="mono">
+                @if (f.codigoReserva) {
+                  {{ f.codigoReserva }}
+                } @else {
+                  Reserva #{{ f.reservaId }}
+                }
+              </td>
+              <td>{{ f.monto | currency:'USD':'symbol':'1.2-2' }}</td>
+              <td>{{ f.metodoPago ?? '—' }}</td>
+              <td>{{ f.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td>
+                <span class="badge" [class]="estadoClass(f.estado)">{{ f.estado }}</span>
+              </td>
+              <td class="actions-cell">
+                @if (f.estado === 'Pendiente') {
+                  <button
+                    mat-flat-button
+                    color="primary"
+                    [disabled]="updating() === f.facturaId"
+                    (click)="aprobar(f.facturaId)"
+                    matTooltip="Aprobar factura y confirmar reserva"
+                    style="margin-right:4px"
+                  >
+                    <mat-icon>check_circle</mat-icon> Aprobar
+                  </button>
+                  <button
+                    mat-stroked-button
+                    color="warn"
+                    [disabled]="updating() === f.facturaId"
+                    (click)="rechazar(f.facturaId)"
+                    matTooltip="Rechazar factura"
+                  >
+                    <mat-icon>cancel</mat-icon> Rechazar
+                  </button>
+                } @else {
+                  <span class="text-muted" style="font-size:0.8rem">Sin acciones</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

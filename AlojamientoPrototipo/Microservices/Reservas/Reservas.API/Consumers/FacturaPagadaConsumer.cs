@@ -31,7 +31,16 @@ public class FacturaPagadaConsumer : IConsumer<FacturaPagadaEvent>
 
         try
         {
-            // Actualizar estado de la reserva a "Confirmada"
+            // Idempotencia: si la reserva ya está Confirmada, descartar el evento duplicado
+            var reserva = await _reservasDataService.GetByIdAsync(evento.ReservaId);
+            if (reserva?.Estado == "Confirmada")
+            {
+                _logger.LogInformation(
+                    "⏭️ Reserva {ReservaId} ya estaba 'Confirmada'. Evento descartado (idempotencia).",
+                    evento.ReservaId);
+                return;
+            }
+
             await _reservasDataService.UpdateStatusAsync(evento.ReservaId, "Confirmada");
 
             _logger.LogInformation(

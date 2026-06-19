@@ -1,0 +1,1422 @@
+openapi: 3.0.3
+
+# ════════════════════════════════════════════════════════════════════
+#  AlojamientoMR — Contrato de Integración V2
+#  Versión:  2.0.0
+#  Fecha:    2026-06-16
+#  Autora:   Melany Analuisa
+#
+#  Este contrato reemplaza al V1 (alojamiento-booking-integration-contract-analuisa.yaml).
+#  TODOS los endpoints usan el prefijo /api/v2/naomy-analuisa/
+#
+#  NOVEDADES V2:
+#    ✅ Idempotencia obligatoria en POST /booking (X-Idempotency-Key)
+#    ✅ Factura draft generada automáticamente vía RabbitMQ al crear reserva
+#    ✅ Notificaciones en tiempo real via WebSocket (SignalR) en /hub/notifications
+#    ✅ Endpoint GraphQL BFF en /graphql para consultas agregadas
+#
+#  Servidor único: https://alojamientosapigateway.onrender.com
+#  Prefijo V2:     /api/v2/naomy-analuisa/
+# ════════════════════════════════════════════════════════════════════
+
+info:
+  title: AlojamientoMR — Contrato de Integración V2
+  description: |
+    API pública V2 de **AlojamientoMR** expuesta a través del API Gateway.
+
+    Todos los endpoints usan el prefijo `/api/v2/naomy-analuisa/`. El Gateway
+    redirige internamente a los microservicios sin que el integrador tenga que
+    conocer la arquitectura interna.
+
+    ---
+
+    ## Flujo de integración V2
+
+    ```
+    1. GET  /api/v2/naomy-analuisa/alojamientos
+            → Catálogo de propiedades disponibles
+
+    2. GET  /api/v2/naomy-analuisa/habitaciones/alojamiento/{id}
+            → Habitaciones de la propiedad con precios
+
+    3. GET  /api/v2/naomy-analuisa/calendario/habitacion/{id}?mes=7&anio=2026
+            → Disponibilidad de fechas
+
+    4. POST /api/v2/naomy-analuisa/clientes/registrar
+            → Registrar huésped (si es nuevo)
+
+    5. POST /api/v2/naomy-analuisa/booking          ← REQUIERE X-Idempotency-Key
+            → Crear reserva. La factura draft se genera AUTOMÁTICAMENTE.
+              No hace falta llamar a POST /facturas.
+
+    6. GET  /api/v2/naomy-analuisa/facturas/reserva/{reservaId}
+            → Consultar factura generada automáticamente
+
+    7. PATCH /api/v2/naomy-analuisa/facturas/{id}/aprobar
+            → Aprobar pago → reserva pasa a "Confirmada" automáticamente
+    ```
+
+    ---
+
+    ## Alternativa GraphQL (una sola consulta agrega alojamiento + habitaciones)
+
+    `POST https://alojamientosapigateway.onrender.com/graphql`
+
+    ```graphql
+    query {
+      alojamiento(id: 1) {
+        id
+        nombre
+        descripcion
+        habitaciones {
+          id
+          tipo
+          precioPorNoche
+          capacidad
+        }
+      }
+    }
+    ```
+
+    ---
+
+    ## Notificaciones en tiempo real (WebSocket SignalR)
+
+    Conectar al hub: `wss://alojamientosapigateway.onrender.com/hub/notifications`
+
+    | Evento Angular          | Se dispara cuando...                        | Payload                                                  |
+    |-------------------------|---------------------------------------------|----------------------------------------------------------|
+    | `OnReservaCreadaEvent`  | Se crea una nueva reserva                   | `{ reservaId, codigoReserva, total, fechaCreacion }`     |
+    | `OnFacturaPagadaEvent`  | Se aprueba una factura                      | `{ reservaId, facturaId, montoPagado, fechaPago }`        |
+
+    ---
+
+    ## Idempotencia en POST /booking
+
+    La cabecera `X-Idempotency-Key` es **obligatoria** en este endpoint.
+    Genera un UUID único por transacción. En Angular se genera automáticamente
+    con `crypto.randomUUID()`.
+
+    | Escenario                              | Respuesta del servidor              |
+    |----------------------------------------|-------------------------------------|
+    | Primera petición con esa clave         | `201 Created` — reserva creada      |
+    | Reintento (misma clave, ya procesado)  | `200 OK` — respuesta cacheada       |
+    | Dos peticiones concurrentes            | `409 Conflict`                      |
+    | Cabecera ausente o inválida            | `400 Bad Request`                   |
+
+    ---
+
+    ## Envelope de respuesta estándar
+
+    ```json
+    {
+      "success": true | false,
+      "message": "descripción o null",
+      "errors": [],
+      "data": { ... }
+    }
+    ```
+
+    ---
+
+    ## Tabla de redirecciones del Gateway (V2)
+
+    | Ruta pública V2                                  | Microservicio destino        |
+    |--------------------------------------------------|------------------------------|
+    | `/api/v2/naomy-analuisa/alojamientos/**`         | Alojamientos.API             |
+    | `/api/v2/naomy-analuisa/habitaciones/**`         | Alojamientos.API             |
+    | `/api/v2/naomy-analuisa/calendario/**`           | Alojamientos.API             |
+    | `/api/v2/naomy-analuisa/fotos/**`                | Alojamientos.API             |
+    | `/api/v2/naomy-analuisa/auth/**`                 | Usuarios.API                 |
+    | `/api/v2/naomy-analuisa/clientes/**`             | Usuarios.API                 |
+    | `/api/v2/naomy-analuisa/booking/**`              | Reservas.API (con idempotencia) |
+    | `/api/v2/naomy-analuisa/facturas/**`             | Facturacion.API              |
+    | `/api/v2/naomy-analuisa/metodospago/**`          | Facturacion.API              |
+    | `/graphql`                                       | ApiGateway — HotChocolate BFF |
+    | `/hub/notifications`                             | ApiGateway — SignalR Hub     |
+
+  version: 2.0.0
+  contact:
+    name: Equipo AlojamientoMR — Melany Analuisa
+    email: melanyanaluisa76@gmail.com
+
+servers:
+  - url: https://alojamientosapigateway.onrender.com
+    description: Producción — API Gateway en Render
+  - url: http://localhost:5001
+    description: Desarrollo Local
+
+tags:
+  - name: Alojamientos
+    description: Catálogo de propiedades hoteleras
+  - name: Habitaciones
+    description: Habitaciones por propiedad con precios y capacidades
+  - name: Disponibilidad
+    description: Calendario de fechas libres y ocupadas por habitación
+  - name: Autenticación
+    description: Login de usuarios
+  - name: Clientes
+    description: Registro y perfil de huéspedes
+  - name: Reservas
+    description: Ciclo de vida de reservas — requiere X-Idempotency-Key en creación
+  - name: Facturación
+    description: Comprobantes de pago y métodos de pago
+
+paths:
+
+  # ════════════════════════════════════════════════════════════════
+  #  MÓDULO 1 — ALOJAMIENTOS
+  #  Ruta V2: /api/v2/naomy-analuisa/alojamientos/**
+  #  Redirige a: Alojamientos.API → /api/v1/alojamientosanaluisa/**
+  # ════════════════════════════════════════════════════════════════
+
+  /api/v2/naomy-analuisa/alojamientos:
+    get:
+      tags: [Alojamientos]
+      summary: Listar todos los alojamientos
+      operationId: GetAllAlojamientosV2
+      responses:
+        '200':
+          description: Catálogo obtenido con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseListAlojamiento'
+              example:
+                success: true
+                message: null
+                errors: []
+                data:
+                  - alojamientoId: 1
+                    nombre: "Grand Majestic Hotel"
+                    ciudad: "Quito"
+                    direccion: "Av. Amazonas N24-15"
+                    estrellas: 4
+                    calificacionPromedio: 4.6
+                    admiteMascotas: false
+                    tienePiscina: true
+                    tieneParqueadero: true
+                    estado: "Activo"
+
+    post:
+      tags: [Alojamientos]
+      summary: Registrar un nuevo alojamiento
+      operationId: CrearAlojamientoV2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearAlojamientoRequest'
+            example:
+              socioId: 10
+              tipoAlojamientoId: 2
+              nombre: "Grand Majestic Hotel"
+              ciudad: "Quito"
+              direccion: "Av. Amazonas N24-15"
+              descripcion: "Hotel moderno de 4 estrellas."
+              admiteMascotas: false
+              tienePiscina: true
+              tieneParqueadero: true
+      responses:
+        '201':
+          description: Alojamiento creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseAlojamiento'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v2/naomy-analuisa/alojamientos/{id}:
+    get:
+      tags: [Alojamientos]
+      summary: Detalle completo de un alojamiento
+      operationId: GetAlojamientoByIdV2
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Alojamiento encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseAlojamiento'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Alojamientos]
+      summary: Actualizar datos de un alojamiento
+      operationId: ActualizarAlojamientoV2
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarAlojamientoRequest'
+      responses:
+        '204':
+          description: Actualizado correctamente
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Alojamientos]
+      summary: Eliminar un alojamiento
+      operationId: EliminarAlojamientoV2
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Eliminado correctamente
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ════════════════════════════════════════════════════════════════
+  #  MÓDULO 2 — HABITACIONES
+  #  Ruta V2: /api/v2/naomy-analuisa/habitaciones/**
+  #  Redirige a: Alojamientos.API → /api/v1/habitacionesanaluisa/**
+  # ════════════════════════════════════════════════════════════════
+
+  /api/v2/naomy-analuisa/habitaciones/alojamiento/{alojamientoId}:
+    get:
+      tags: [Habitaciones]
+      summary: Habitaciones de un alojamiento
+      operationId: GetHabitacionesByAlojamientoV2
+      parameters:
+        - name: alojamientoId
+          in: path
+          required: true
+          description: ID del alojamiento
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Habitaciones obtenidas con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseListHabitacion'
+              example:
+                success: true
+                message: null
+                errors: []
+                data:
+                  - habitacionId: 101
+                    alojamientoId: 1
+                    nombre: "Suite Presidencial"
+                    precioPorNoche: 150.00
+                    moneda: "USD"
+                    capacidadAdultos: 2
+                    capacidadNinos: 1
+                    estado: "Disponible"
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v2/naomy-analuisa/habitaciones/{id}:
+    get:
+      tags: [Habitaciones]
+      summary: Detalle de una habitación
+      operationId: GetHabitacionByIdV2
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Habitación encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseHabitacion'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Habitaciones]
+      summary: Eliminar una habitación
+      operationId: EliminarHabitacionV2
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Eliminada correctamente
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v2/naomy-analuisa/habitaciones:
+    post:
+      tags: [Habitaciones]
+      summary: Registrar una nueva habitación
+      operationId: CrearHabitacionV2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearHabitacionRequest'
+            example:
+              alojamientoId: 1
+              nombre: "Suite Presidencial"
+              descripcion: "Suite de lujo con vista panorámica."
+              precioPorNoche: 150.00
+              capacidadAdultos: 2
+              capacidadNinos: 1
+              numDormitorios: 1
+              numBanos: 2
+      responses:
+        '201':
+          description: Habitación creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseHabitacion'
+
+  # ════════════════════════════════════════════════════════════════
+  #  MÓDULO 3 — DISPONIBILIDAD / CALENDARIO
+  #  Ruta V2: /api/v2/naomy-analuisa/calendario/**
+  #  Redirige a: Alojamientos.API → /api/v1/calendarioanaluisa/**
+  # ════════════════════════════════════════════════════════════════
+
+  /api/v2/naomy-analuisa/calendario/habitacion/{habitacionId}:
+    get:
+      tags: [Disponibilidad]
+      summary: Disponibilidad mensual de una habitación
+      description: |
+        Lista el estado día a día para un mes y año específicos.
+
+        Estados posibles: `Disponible`, `Reservado`, `Bloqueado`
+      operationId: GetDisponibilidadMensualV2
+      parameters:
+        - name: habitacionId
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 101
+        - name: mes
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+            example: 7
+        - name: anio
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 2020
+            example: 2026
+      responses:
+        '200':
+          description: Disponibilidad mensual obtenida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseListCalendario'
+              example:
+                success: true
+                message: null
+                errors: []
+                data:
+                  - calendarioId: 200
+                    habitacionId: 101
+                    fecha: "2026-07-01"
+                    estado: "Disponible"
+                  - calendarioId: 201
+                    habitacionId: 101
+                    fecha: "2026-07-04"
+                    estado: "Reservado"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v2/naomy-analuisa/calendario/bloquear:
+    post:
+      tags: [Disponibilidad]
+      summary: Bloquear rango de fechas de una habitación
+      operationId: BloquearFechasV2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BloquearFechasRequest'
+            example:
+              habitacionId: 101
+              fechaInicio: "2026-07-10"
+              fechaFin: "2026-07-15"
+      responses:
+        '200':
+          description: Fechas bloqueadas exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseListCalendario'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  # ════════════════════════════════════════════════════════════════
+  #  MÓDULO 4 — AUTENTICACIÓN
+  #  Ruta V2: /api/v2/naomy-analuisa/auth/**
+  #  Redirige a: Usuarios.API → /api/v1/authanaluisa/**
+  # ════════════════════════════════════════════════════════════════
+
+  /api/v2/naomy-analuisa/auth/login:
+    post:
+      tags: [Autenticación]
+      summary: Iniciar sesión
+      operationId: LoginV2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: "juan.perez@email.com"
+              password: "PasswordSeguro123"
+      responses:
+        '200':
+          description: Login exitoso — retorna JWT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseLogin'
+              example:
+                success: true
+                message: null
+                errors: []
+                data:
+                  token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  expira: "2026-07-16T20:00:00Z"
+        '401':
+          description: Credenciales inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+
+  # ════════════════════════════════════════════════════════════════
+  #  MÓDULO 5 — CLIENTES / HUÉSPEDES
+  #  Ruta V2: /api/v2/naomy-analuisa/clientes/**
+  #  Redirige a: Usuarios.API → /api/v1/clientesanaluisa/**
+  # ════════════════════════════════════════════════════════════════
+
+  /api/v2/naomy-analuisa/clientes/registrar:
+    post:
+      tags: [Clientes]
+      summary: Registrar nuevo huésped
+      description: |
+        Antes de llamar, verificar si ya existe con
+        `GET /api/v2/naomy-analuisa/clientes/cedula/{cedula}`.
+      operationId: RegistrarClienteV2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrarClienteRequest'
+            example:
+              email: "juan.perez@email.com"
+              password: "PasswordSeguro123"
+              nombreCompleto: "Juan Pérez"
+              cedula: "1712345678"
+              telefono: "0991234567"
+              domicilio: "Av. Principal 123, Quito"
+      responses:
+        '201':
+          description: Cliente registrado con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseSuccess'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v2/naomy-analuisa/clientes/cedula/{cedula}:
+    get:
+      tags: [Clientes]
+      summary: Buscar huésped por cédula
+      operationId: GetClienteByCedulaV2
+      parameters:
+        - name: cedula
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{10}$'
+            example: "1712345678"
+      responses:
+        '200':
+          description: Cliente encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseCliente'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v2/naomy-analuisa/clientes/{clienteId}:
+    get:
+      tags: [Clientes]
+      summary: Perfil completo del huésped
+      operationId: GetClienteByIdV2
+      parameters:
+        - name: clienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Perfil del huésped
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseCliente'
+              example:
+                success: true
+                message: null
+                errors: []
+                data:
+                  clienteId: 1
+                  nombreCompleto: "Juan Pérez"
+                  email: "juan.perez@email.com"
+                  cedula: "1712345678"
+                  telefono: "0991234567"
+                  totalReservas: 3
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Clientes]
+      summary: Actualizar perfil del huésped
+      operationId: ActualizarClienteV2
+      parameters:
+        - name: clienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarClienteRequest'
+      responses:
+        '200':
+          description: Cliente actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseSuccess'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ════════════════════════════════════════════════════════════════
+  #  MÓDULO 6 — RESERVAS (BOOKING)  ← IDEMPOTENCIA OBLIGATORIA
+  #  Ruta V2: /api/v2/naomy-analuisa/booking/**
+  #  Redirige a: Reservas.API → /api/v2/reservasanaluisa/**
+  # ════════════════════════════════════════════════════════════════
+
+  /api/v2/naomy-analuisa/booking:
+    post:
+      tags: [Reservas]
+      summary: Crear reserva con idempotencia obligatoria
+      description: |
+        **Endpoint principal del flujo de reservas.**
+
+        ### Cabecera obligatoria
+        ```
+        X-Idempotency-Key: <UUID>
+        ```
+        Generar con `crypto.randomUUID()` en Angular. El interceptor Angular
+        lo agrega automáticamente en todos los POST a rutas `/booking`.
+
+        ### ¿Qué ocurre tras crear la reserva?
+        El sistema orquesta automáticamente (sin que el integrador tenga que hacer nada):
+
+        1. **gRPC** — verifica disponibilidad en Alojamientos.API
+        2. **DB** — crea la reserva en estado `Pendiente`
+        3. **RabbitMQ** — publica `ReservaCreadaEvent`
+        4. **Facturación** — consume el evento y crea una factura draft con IVA 15%
+        5. **SignalR** — hace broadcast `OnReservaCreadaEvent` a todos los clientes conectados
+
+        No es necesario llamar a `POST /facturas` por separado.
+
+        ### Comportamiento de idempotencia
+
+        | Escenario                              | Respuesta              |
+        |----------------------------------------|------------------------|
+        | Primera petición con esa clave         | `201 Created`          |
+        | Reintento (misma clave, ya procesado)  | `200 OK` + caché       |
+        | Dos peticiones concurrentes            | `409 Conflict`         |
+        | Cabecera ausente                       | `400 Bad Request`      |
+      operationId: CrearReservaV2
+      parameters:
+        - name: X-Idempotency-Key
+          in: header
+          required: true
+          description: UUID único generado por el cliente para esta transacción
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearReservaRequest'
+            example:
+              clienteId: 1
+              alojamientoId: 1
+              fechaCheckIn: "2026-07-01"
+              fechaCheckOut: "2026-07-05"
+              numAdultos: 2
+              numNinos: 0
+              llevaMascotas: false
+              codigoDescuento: null
+              habitaciones:
+                - habitacionId: 101
+                  precioPorNoche: 150.00
+                  numNoches: 4
+      responses:
+        '201':
+          description: Reserva creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseReserva'
+              example:
+                success: true
+                message: "Reserva creada exitosamente"
+                errors: []
+                data:
+                  reservaId: 55
+                  codigoReserva: "RES-55-a3f9"
+                  fechaCheckIn: "2026-07-01"
+                  fechaCheckOut: "2026-07-05"
+                  numAdultos: 2
+                  numHabitaciones: 1
+                  subTotal: 600.00
+                  total: 600.00
+                  moneda: "USD"
+                  estado: "Pendiente"
+                  fechaCreacion: "2026-06-16T20:00:00Z"
+        '200':
+          description: Reintento idempotente — respuesta cacheada de la petición original
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseReserva'
+        '400':
+          description: Datos inválidos o cabecera X-Idempotency-Key ausente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+              examples:
+                sinClave:
+                  summary: Cabecera X-Idempotency-Key ausente
+                  value:
+                    success: false
+                    message: "La cabecera 'X-Idempotency-Key' es obligatoria y debe ser un UUID válido."
+                    errors: []
+                    data: null
+                habitacionOcupada:
+                  summary: Habitación no disponible
+                  value:
+                    success: false
+                    message: "Habitación 101 no disponible: Las fechas ya están reservadas."
+                    errors: ["BusinessRuleException"]
+                    data: null
+        '409':
+          description: Petición duplicada concurrente detectada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+              example:
+                success: false
+                message: "Petición duplicada: la solicitud original aún está siendo procesada."
+                errors: []
+                data: null
+
+  /api/v2/naomy-analuisa/booking/{id}:
+    get:
+      tags: [Reservas]
+      summary: Consultar reserva por ID
+      operationId: GetReservaByIdV2
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Reserva encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseReserva'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v2/naomy-analuisa/booking/cliente/{clienteId}:
+    get:
+      tags: [Reservas]
+      summary: Historial completo de reservas de un huésped
+      operationId: GetReservasByClienteV2
+      parameters:
+        - name: clienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Historial obtenido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseListReserva'
+
+  /api/v2/naomy-analuisa/booking/resumen/cliente/{clienteId}:
+    get:
+      tags: [Reservas]
+      summary: Resumen ligero de reservas (para listas y dashboards)
+      operationId: GetResumenReservasByClienteV2
+      parameters:
+        - name: clienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Resumen obtenido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseListReservaResumen'
+
+  /api/v2/naomy-analuisa/booking/{id}/estado:
+    patch:
+      tags: [Reservas]
+      summary: Actualizar estado de una reserva
+      description: |
+        Transiciones permitidas:
+        ```
+        Pendiente  →  Confirmada | Cancelada
+        Confirmada →  Completada | Cancelada
+        ```
+        > La transición a `Confirmada` también ocurre automáticamente cuando
+        > se aprueba la factura (via `PATCH /facturas/{id}/aprobar`).
+      operationId: ActualizarEstadoReservaV2
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarEstadoReservaRequest'
+            example:
+              estado: "Cancelada"
+      responses:
+        '204':
+          description: Estado actualizado correctamente
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ════════════════════════════════════════════════════════════════
+  #  MÓDULO 7 — FACTURACIÓN
+  #  Ruta V2: /api/v2/naomy-analuisa/facturas/**
+  #  Redirige a: Facturacion.API → /api/v1/facturasanaluisa/**
+  # ════════════════════════════════════════════════════════════════
+
+  /api/v2/naomy-analuisa/facturas/reserva/{reservaId}:
+    get:
+      tags: [Facturación]
+      summary: Factura de una reserva
+      description: |
+        Al usar el flujo V2 (POST /booking), la factura draft se genera
+        automáticamente. Este endpoint la recupera.
+      operationId: GetFacturaByReservaV2
+      parameters:
+        - name: reservaId
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 55
+      responses:
+        '200':
+          description: Factura encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseListFactura'
+              example:
+                success: true
+                message: null
+                errors: []
+                data:
+                  - facturaId: 10
+                    reservaId: 55
+                    monto: 690.00
+                    moneda: "USD"
+                    estado: "Pendiente"
+                    detalles:
+                      - descripcion: "Habitación 101 — 4 noche(s) x $150.00"
+                        cantidad: 4
+                        precioUnitario: 150.00
+                      - descripcion: "IVA 15%"
+                        cantidad: 1
+                        precioUnitario: 90.00
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v2/naomy-analuisa/facturas/{id}/aprobar:
+    patch:
+      tags: [Facturación]
+      summary: Aprobar factura y confirmar reserva automáticamente
+      description: |
+        Al aprobar la factura:
+        1. Publica `FacturaPagadaEvent` en RabbitMQ
+        2. Reservas.API actualiza la reserva a estado `Confirmada` automáticamente
+        3. SignalR hace broadcast `OnFacturaPagadaEvent` a clientes conectados
+      operationId: AprobarFacturaV2
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Factura aprobada — reserva actualizada a Confirmada automáticamente
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v2/naomy-analuisa/facturas/{id}/rechazar:
+    patch:
+      tags: [Facturación]
+      summary: Rechazar factura
+      operationId: RechazarFacturaV2
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Factura rechazada
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v2/naomy-analuisa/facturas:
+    post:
+      tags: [Facturación]
+      summary: Crear factura manualmente (solo si no se usó flujo V2)
+      description: |
+        > ℹ️ Si se usó `POST /api/v2/naomy-analuisa/booking`, la factura draft
+        > ya fue creada automáticamente. Solo llamar a este endpoint para ajustes manuales.
+      operationId: CrearFacturaV2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearFacturaRequest'
+            example:
+              reservaId: 55
+              metodoPagoId: 1
+              monto: 690.00
+              detalles:
+                - descripcion: "4 noches Suite Presidencial"
+                  cantidad: 4
+                  precioUnitario: 150.00
+                - descripcion: "IVA 15%"
+                  cantidad: 1
+                  precioUnitario: 90.00
+      responses:
+        '201':
+          description: Factura creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseFactura'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v2/naomy-analuisa/metodospago:
+    get:
+      tags: [Facturación]
+      summary: Métodos de pago disponibles
+      operationId: GetMetodosPagoV2
+      responses:
+        '200':
+          description: Métodos de pago obtenidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseListMetodoPago'
+              example:
+                success: true
+                message: null
+                errors: []
+                data:
+                  - metodoPagoId: 1
+                    tipo: "CREDITO"
+                  - metodoPagoId: 2
+                    tipo: "DEBITO"
+                  - metodoPagoId: 3
+                    tipo: "EnSitio"
+
+# ════════════════════════════════════════════════════════════════════
+#  COMPONENTES / MODELOS
+# ════════════════════════════════════════════════════════════════════
+components:
+
+  parameters:
+    IdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        example: 1
+
+  responses:
+    BadRequest:
+      description: Datos inválidos
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiResponseError'
+          example:
+            success: false
+            message: "Datos de entrada inválidos."
+            errors: ["ValidationException"]
+            data: null
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiResponseError'
+          example:
+            success: false
+            message: "El recurso solicitado no existe."
+            errors: ["NotFoundException"]
+            data: null
+
+  schemas:
+
+    # ── Alojamientos ─────────────────────────────────────────────
+    AlojamientoDto:
+      type: object
+      properties:
+        alojamientoId: { type: integer, example: 1 }
+        socioId: { type: integer, example: 10 }
+        tipoAlojamientoId: { type: integer, example: 2 }
+        tipoAlojamientoNombre: { type: string, example: "Hotel" }
+        nombre: { type: string, example: "Grand Majestic Hotel" }
+        ciudad: { type: string, nullable: true, example: "Quito" }
+        direccion: { type: string, example: "Av. Amazonas N24-15" }
+        descripcion: { type: string, nullable: true }
+        estrellas: { type: integer, nullable: true, minimum: 1, maximum: 5 }
+        calificacionPromedio: { type: number, format: double, example: 4.6 }
+        totalResenas: { type: integer, example: 32 }
+        admiteMascotas: { type: boolean, example: false }
+        tienePiscina: { type: boolean, example: true }
+        tieneParqueadero: { type: boolean, example: true }
+        estado: { type: string, enum: [Activo, Inactivo], example: "Activo" }
+        fechaCreacion: { type: string, format: date-time }
+      required: [alojamientoId, nombre, direccion, estado]
+
+    CrearAlojamientoRequest:
+      type: object
+      required: [socioId, tipoAlojamientoId, nombre, direccion]
+      properties:
+        socioId: { type: integer }
+        tipoAlojamientoId: { type: integer }
+        nombre: { type: string, maxLength: 200 }
+        ciudad: { type: string, maxLength: 100, nullable: true }
+        direccion: { type: string, maxLength: 300 }
+        descripcion: { type: string, nullable: true }
+        admiteMascotas: { type: boolean, default: false }
+        tienePiscina: { type: boolean, default: false }
+        tieneParqueadero: { type: boolean, default: false }
+
+    ActualizarAlojamientoRequest:
+      type: object
+      required: [nombre, direccion, tipoAlojamientoId]
+      properties:
+        nombre: { type: string, maxLength: 200 }
+        ciudad: { type: string, maxLength: 100, nullable: true }
+        direccion: { type: string, maxLength: 300 }
+        descripcion: { type: string, nullable: true }
+        tipoAlojamientoId: { type: integer }
+        estrellas: { type: integer, nullable: true, minimum: 1, maximum: 5 }
+        admiteMascotas: { type: boolean }
+        tienePiscina: { type: boolean }
+        tieneParqueadero: { type: boolean }
+
+    # ── Habitaciones ─────────────────────────────────────────────
+    HabitacionDto:
+      type: object
+      properties:
+        habitacionId: { type: integer, example: 101 }
+        alojamientoId: { type: integer, example: 1 }
+        nombre: { type: string, example: "Suite Presidencial" }
+        descripcion: { type: string, nullable: true }
+        precioPorNoche: { type: number, format: double, example: 150.00 }
+        moneda: { type: string, default: "USD" }
+        capacidadAdultos: { type: integer, example: 2 }
+        capacidadNinos: { type: integer, example: 1 }
+        numDormitorios: { type: integer, example: 1 }
+        numBanos: { type: integer, example: 2 }
+        tieneCocina: { type: boolean, example: false }
+        tieneAireAcondicionado: { type: boolean, example: true }
+        superficieM2: { type: number, nullable: true }
+        estado: { type: string, enum: [Disponible, Reservada, Bloqueada] }
+      required: [habitacionId, alojamientoId, nombre, precioPorNoche]
+
+    CrearHabitacionRequest:
+      type: object
+      required: [alojamientoId, nombre, precioPorNoche, capacidadAdultos]
+      properties:
+        alojamientoId: { type: integer }
+        nombre: { type: string, maxLength: 200 }
+        descripcion: { type: string, nullable: true }
+        precioPorNoche: { type: number, minimum: 1 }
+        capacidadAdultos: { type: integer, minimum: 1 }
+        capacidadNinos: { type: integer, default: 0 }
+        numDormitorios: { type: integer, default: 1 }
+        numBanos: { type: integer, default: 1 }
+        tieneCocina: { type: boolean, default: false }
+        tieneAireAcondicionado: { type: boolean, default: false }
+        superficieM2: { type: number, nullable: true }
+
+    # ── Calendario ───────────────────────────────────────────────
+    CalendarioDto:
+      type: object
+      properties:
+        calendarioId: { type: integer }
+        habitacionId: { type: integer }
+        fecha: { type: string, format: date, example: "2026-07-01" }
+        estado: { type: string, enum: [Disponible, Reservado, Bloqueado] }
+      required: [calendarioId, habitacionId, fecha, estado]
+
+    BloquearFechasRequest:
+      type: object
+      required: [habitacionId, fechaInicio, fechaFin]
+      properties:
+        habitacionId: { type: integer }
+        fechaInicio: { type: string, format: date }
+        fechaFin: { type: string, format: date }
+
+    # ── Autenticación ────────────────────────────────────────────
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+
+    LoginResponseDto:
+      type: object
+      properties:
+        token: { type: string, description: "JWT Bearer token" }
+        expira: { type: string, format: date-time }
+
+    # ── Clientes ─────────────────────────────────────────────────
+    ClienteDto:
+      type: object
+      properties:
+        clienteId: { type: integer }
+        nombreCompleto: { type: string }
+        email: { type: string, format: email }
+        cedula: { type: string }
+        telefono: { type: string, nullable: true }
+        domicilio: { type: string, nullable: true }
+        totalReservas: { type: integer }
+        fechaCreacion: { type: string, format: date-time }
+      required: [clienteId, nombreCompleto, email, cedula]
+
+    RegistrarClienteRequest:
+      type: object
+      required: [email, password, nombreCompleto, cedula, telefono, domicilio]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+        nombreCompleto: { type: string, maxLength: 200 }
+        cedula: { type: string, pattern: '^\d{10}$', description: "Exactamente 10 dígitos" }
+        telefono: { type: string, pattern: '^\d+$' }
+        domicilio: { type: string, maxLength: 300 }
+
+    ActualizarClienteRequest:
+      type: object
+      properties:
+        nombreCompleto: { type: string, maxLength: 200 }
+        telefono: { type: string, nullable: true }
+        domicilio: { type: string, maxLength: 300, nullable: true }
+
+    # ── Reservas ─────────────────────────────────────────────────
+    ReservaDto:
+      type: object
+      properties:
+        reservaId: { type: integer, example: 55 }
+        clienteId: { type: integer }
+        alojamientoId: { type: integer }
+        codigoReserva: { type: string, example: "RES-55-a3f9", description: "Formato RES-{id}-{hash4}" }
+        fechaCheckIn: { type: string, format: date }
+        fechaCheckOut: { type: string, format: date }
+        numAdultos: { type: integer }
+        numNinos: { type: integer }
+        llevaMascotas: { type: boolean }
+        numHabitaciones: { type: integer }
+        subTotal: { type: number, format: double }
+        total: { type: number, format: double, description: "Total después de descuentos" }
+        moneda: { type: string, default: "USD" }
+        estado: { type: string, enum: [Pendiente, Confirmada, Cancelada, Completada] }
+        fechaCreacion: { type: string, format: date-time }
+        detallesHabitacion:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetalleHabitacionDto'
+        codigoDescuentoAplicado: { type: string, nullable: true }
+        porcentajeDescuento: { type: number, nullable: true }
+      required: [reservaId, clienteId, alojamientoId, codigoReserva, fechaCheckIn, fechaCheckOut, estado]
+
+    DetalleHabitacionDto:
+      type: object
+      properties:
+        detalleId: { type: integer }
+        habitacionId: { type: integer }
+        precioPorNoche: { type: number, format: double }
+        numNoches: { type: integer }
+        subTotalHabitacion: { type: number, format: double }
+
+    ReservaResumenDto:
+      type: object
+      properties:
+        reservaId: { type: integer }
+        codigoReserva: { type: string }
+        fechaCheckIn: { type: string, format: date }
+        fechaCheckOut: { type: string, format: date }
+        numHabitaciones: { type: integer }
+        total: { type: number, format: double }
+        moneda: { type: string, default: "USD" }
+        estado: { type: string, enum: [Pendiente, Confirmada, Cancelada, Completada] }
+        fechaCreacion: { type: string, format: date-time }
+
+    CrearReservaRequest:
+      type: object
+      required: [clienteId, alojamientoId, fechaCheckIn, fechaCheckOut, numAdultos, habitaciones]
+      properties:
+        clienteId: { type: integer }
+        alojamientoId: { type: integer }
+        fechaCheckIn: { type: string, format: date, example: "2026-07-01" }
+        fechaCheckOut: { type: string, format: date, example: "2026-07-05" }
+        numAdultos: { type: integer, minimum: 1 }
+        numNinos: { type: integer, minimum: 0, default: 0 }
+        llevaMascotas: { type: boolean, default: false }
+        codigoDescuento: { type: string, nullable: true }
+        habitaciones:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/DetalleHabitacionRequest'
+
+    DetalleHabitacionRequest:
+      type: object
+      required: [habitacionId, precioPorNoche, numNoches]
+      properties:
+        habitacionId: { type: integer }
+        precioPorNoche: { type: number, minimum: 1 }
+        numNoches: { type: integer, minimum: 1 }
+
+    ActualizarEstadoReservaRequest:
+      type: object
+      required: [estado]
+      properties:
+        estado: { type: string, enum: [Confirmada, Cancelada, Completada] }
+
+    # ── Facturación ──────────────────────────────────────────────
+    FacturaDto:
+      type: object
+      properties:
+        facturaId: { type: integer }
+        reservaId: { type: integer }
+        monto: { type: number, format: double }
+        moneda: { type: string, default: "USD" }
+        metodoPago: { type: string, enum: [CREDITO, DEBITO, EnSitio], nullable: true }
+        estado: { type: string, enum: [Pendiente, Pagado, Rechazado] }
+        fechaPago: { type: string, format: date-time, nullable: true }
+        fechaCreacion: { type: string, format: date-time }
+        detalles:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetalleFacturaDto'
+      required: [facturaId, reservaId, monto, estado]
+
+    DetalleFacturaDto:
+      type: object
+      properties:
+        descripcion: { type: string }
+        cantidad: { type: integer }
+        precioUnitario: { type: number, format: double }
+
+    CrearFacturaRequest:
+      type: object
+      required: [reservaId, monto, detalles]
+      properties:
+        reservaId: { type: integer }
+        metodoPagoId: { type: integer, nullable: true, description: "1=CREDITO, 2=DEBITO, 3=EnSitio" }
+        monto: { type: number, format: double, minimum: 0.01 }
+        fechaPago: { type: string, format: date-time, nullable: true }
+        detalles:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/CrearDetalleFacturaRequest'
+
+    CrearDetalleFacturaRequest:
+      type: object
+      required: [descripcion, cantidad, precioUnitario]
+      properties:
+        descripcion: { type: string, maxLength: 200 }
+        cantidad: { type: integer, minimum: 1, maximum: 100 }
+        precioUnitario: { type: number, format: double, minimum: 0.01 }
+
+    MetodoPagoDto:
+      type: object
+      properties:
+        metodoPagoId: { type: integer }
+        tipo: { type: string, enum: [CREDITO, DEBITO, EnSitio] }
+      required: [metodoPagoId, tipo]
+
+    # ── Envelopes estándar ───────────────────────────────────────
+    ApiResponseListAlojamiento:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        errors: { type: array, items: { type: string } }
+        data: { type: array, items: { $ref: '#/components/schemas/AlojamientoDto' } }
+
+    ApiResponseAlojamiento:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        errors: { type: array, items: { type: string } }
+        data: { $ref: '#/components/schemas/AlojamientoDto' }
+
+    ApiResponseListHabitacion:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        errors: { type: array, items: { type: string } }
+        data: { type: array, items: { $ref: '#/components/schemas/HabitacionDto' } }
+
+    ApiResponseHabitacion:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        errors: { type: array, items: { type: string } }
+        data: { $ref: '#/components/schemas/HabitacionDto' }
+
+    ApiResponseListCalendario:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        errors: { type: array, items: { type: string } }
+        data: { type: array, items: { $ref: '#/components/schemas/CalendarioDto' } }
+
+    ApiResponseCliente:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        errors: { type: array, items: { type: string } }
+        data: { $ref: '#/components/schemas/ClienteDto' }
+
+    ApiResponseLogin:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        errors: { type: array, items: { type: string } }
+        data: { $ref: '#/components/schemas/LoginResponseDto' }
+
+    ApiResponseReserva:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        errors: { type: array, items: { type: string } }
+        data: { $ref: '#/components/schemas/ReservaDto' }
+
+    ApiResponseListReserva:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        errors: { type: array, items: { type: string } }
+        data: { type: array, items: { $ref: '#/components/schemas/ReservaDto' } }
+
+    ApiResponseListReservaResumen:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        errors: { type: array, items: { type: string } }
+        data: { type: array, items: { $ref: '#/components/schemas/ReservaResumenDto' } }
+
+    ApiResponseFactura:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        errors: { type: array, items: { type: string } }
+        data: { $ref: '#/components/schemas/FacturaDto' }
+
+    ApiResponseListFactura:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        errors: { type: array, items: { type: string } }
+        data: { type: array, items: { $ref: '#/components/schemas/FacturaDto' } }
+
+    ApiResponseListMetodoPago:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        errors: { type: array, items: { type: string } }
+        data: { type: array, items: { $ref: '#/components/schemas/MetodoPagoDto' } }
+
+    ApiResponseSuccess:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        message: { type: string }
+        errors: { type: array, items: { type: string } }
+        data: { nullable: true }
+
+    ApiResponseError:
+      type: object
+      properties:
+        success: { type: boolean, example: false }
+        message: { type: string }
+        errors: { type: array, items: { type: string } }
+        data: { nullable: true }

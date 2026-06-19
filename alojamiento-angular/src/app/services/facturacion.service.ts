@@ -25,4 +25,16 @@ export class FacturacionService {
   getMetodosPago(): Observable<ApiResponse<MetodoPagoItem[]>> {
     return this.http.get<ApiResponse<MetodoPagoItem[]>>(`${this.base}/metodospago`);
   }
+
+  getTodasFacturas(): Observable<ApiResponse<FacturaResponse[]>> {
+    return this.http.get<ApiResponse<FacturaResponse[]>>(`${this.base}/facturas`);
+  }
+
+  aprobarFactura(id: number): Observable<ApiResponse<void>> {
+    return this.http.patch<ApiResponse<void>>(`${this.base}/facturas/${id}/aprobar`, {});
+  }
+
+  rechazarFactura(id: number): Observable<ApiResponse<void>> {
+    return this.http.patch<ApiResponse<void>>(`${this.base}/facturas/${id}/rechazar`, {});
+  }
 }

@@ -1,9 +1,11 @@
+using MassTransit;
 using Reservas.Business.DTOs;
 using Reservas.Business.Exceptions;
 using Reservas.Business.Interfaces;
 using Reservas.Business.Mappers;
 using Reservas.DataManagement.Interfaces;
 using Reservas.DataManagement.Models;
+using Shared.Kernel.Events;
 
 namespace Reservas.Business.Services;
 
@@ -13,17 +15,20 @@ public class ReservasService : IReservasService
     private readonly IDescuentosDataService _descuentosDataService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly Shared.Protos.CalendarioGrpc.CalendarioGrpcClient _calendarioGrpcClient;
+    private readonly IPublishEndpoint _publishEndpoint;
 
     public ReservasService(
         IReservasDataService reservasDataService,
         IDescuentosDataService descuentosDataService,
         IUnitOfWork unitOfWork,
-        Shared.Protos.CalendarioGrpc.CalendarioGrpcClient calendarioGrpcClient)
+        Shared.Protos.CalendarioGrpc.CalendarioGrpcClient calendarioGrpcClient,
+        IPublishEndpoint publishEndpoint)
     {
         _reservasDataService = reservasDataService;
         _descuentosDataService = descuentosDataService;
         _unitOfWork = unitOfWork;
         _calendarioGrpcClient = calendarioGrpcClient;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task<ReservaResponse> GetByIdAsync(int id)
@@ -137,8 +142,26 @@ public class ReservasService : IReservasService
         {
             var created = await _reservasDataService.CreateAsync(model);
             await _unitOfWork.CommitTransactionAsync();
-            
-            // TODO: Publicar evento a RabbitMQ -> ReservaCreadaEvent
+
+            await _publishEndpoint.Publish(new ReservaCreadaEvent
+            {
+                ReservaId = created.ReservaId,
+                CodigoReserva = model.CodigoReserva,
+                ClienteId = request.ClienteId,
+                AlojamientoId = request.AlojamientoId,
+                FechaCheckIn = request.FechaCheckIn,
+                FechaCheckOut = request.FechaCheckOut,
+                SubTotal = subTotal,
+                Total = total,
+                FechaCreacion = DateTime.UtcNow,
+                Habitaciones = detalles.Select(d => new DetalleReservaCreadaEvent
+                {
+                    HabitacionId = d.HabitacionId,
+                    PrecioPorNoche = d.PrecioPorNoche,
+                    NumNoches = d.NumNoches,
+                    SubTotalHabitacion = d.SubTotalHabitacion
+                }).ToList()
+            });
 
             return await GetByIdAsync(created.ReservaId);
         }

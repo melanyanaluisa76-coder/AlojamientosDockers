@@ -30,6 +30,15 @@
   <!-- ── Resultados ────────────────────────────────────────────────────────── -->
   @if (loading()) {
     <app-loading-spinner message="Buscando propiedades..." />
+  } @else if (error()) {
+    <div class="empty-state">
+      <mat-icon style="font-size: 3rem; height: 3rem; width: 3rem; color: #f44336;">wifi_off</mat-icon>
+      <h3>No se pudo conectar al servidor</h3>
+      <p>Verifica tu conexión o espera un momento. El servidor puede estar iniciando.</p>
+      <button mat-flat-button color="primary" (click)="buscar()">
+        <mat-icon>refresh</mat-icon> Reintentar
+      </button>
+    </div>
   } @else if (filtered().length === 0) {
     <div class="empty-state">
       <mat-icon style="font-size: 3rem; height: 3rem; width: 3rem;">search_off</mat-icon>

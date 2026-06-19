@@ -45,6 +45,10 @@ export class UsuariosService {
     return this.http.post<ApiResponse<unknown>>(`${this.base}/clientes/registrar`, req);
   }
 
+  getClientes(): Observable<ApiResponse<{ clienteId: number; email: string; nombreCompleto: string }[]>> {
+    return this.http.get<ApiResponse<{ clienteId: number; email: string; nombreCompleto: string }[]>>(`${this.base}/clientes`);
+  }
+
   // ── Gestión de usuarios (Admin) ──────────────────────────────────────────
   getUsuarios(): Observable<ApiResponse<UsuarioAdmin[]>> {
     return this.http.get<ApiResponse<UsuarioAdmin[]>>(`${this.base}/auth/usuarios`);

@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  apiBaseUrl: 'https://alojamientosapigateway.onrender.com/api/v1/naomy-analuisa',
+  apiBaseUrl: 'https://alojamientosapigateway.onrender.com/api/v2/naomy-analuisa',
   gatewayUrl: 'https://alojamientosapigateway.onrender.com',
   appName: 'HousingPlace',
   cloudinary: {
