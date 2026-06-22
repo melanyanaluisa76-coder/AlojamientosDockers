@@ -18,12 +18,5 @@
     <ProjectReference Include="../../Shared/Shared.Kernel/Shared.Kernel.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Content Include="../../../alojamiento-booking-integration-contract-analuisa.yaml">
-      <Link>wwwroot/contract.yaml</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
-    </Content>
-  </ItemGroup>
 
 </Project>
