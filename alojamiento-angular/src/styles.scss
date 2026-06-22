@@ -69,6 +69,21 @@ body {
   h3 { font-size: 1.25rem; margin-bottom: 0.5rem; color: var(--color-text); }
 }
 
+// ── Mobile global overrides ───────────────────────────────────────────────
+@media (max-width: 768px) {
+  .page-container { padding: 1rem 0.75rem; }
+  .section-title  { font-size: 1.2rem; margin-bottom: 1rem; }
+  .empty-state    { padding: 3rem 1rem; }
+
+  // Material form fields más compactos en mobile
+  .mat-mdc-form-field { font-size: 0.9rem; }
+
+  // Botones con mejor área táctil
+  .mat-mdc-button, .mat-mdc-raised-button, .mat-mdc-flat-button {
+    min-height: 44px;
+  }
+}
+
 // ── Skeleton loader ──────────────────────────────────────────────────────
 .skeleton {
   background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);

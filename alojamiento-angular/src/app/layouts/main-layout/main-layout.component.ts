@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterOutlet, Router } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
@@ -21,11 +21,16 @@ import { NotificationService } from '../../core/services/notification.service';
 export class MainLayoutComponent {
   readonly authStore      = inject(AuthStore);
   readonly currentYear    = new Date().getFullYear();
+  readonly mobileMenuOpen = signal(false);
   private readonly notify = inject(NotificationService);
   private readonly router = inject(Router);
 
+  toggleMobileMenu(): void { this.mobileMenuOpen.update(v => !v); }
+  closeMobileMenu(): void  { this.mobileMenuOpen.set(false); }
+
   logout(): void {
     this.authStore.logout();
+    this.closeMobileMenu();
     this.notify.info('Sesión cerrada correctamente.');
     this.router.navigate(['/']);
   }

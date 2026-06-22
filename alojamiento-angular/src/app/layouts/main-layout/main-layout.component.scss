@@ -8,8 +8,8 @@
 .navbar-toolbar {
   background: var(--color-primary) !important;
   color: white !important;
-  height: 64px;
-  padding: 0 1.5rem;
+  height: 56px;
+  padding: 0 1rem;
   gap: 0.5rem;
 }
 
@@ -21,19 +21,17 @@
   color: white;
   font-size: 1.1rem;
   font-weight: 700;
-
   .brand-icon { font-size: 1.5rem; }
 }
 
 .spacer { flex: 1; }
 
-.nav-links {
+// ── Desktop nav ────────────────────────────────────────────────────────────
+.desktop-nav {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-
   a, button { color: rgba(255,255,255,.9) !important; }
-
   .btn-register {
     background: var(--color-accent) !important;
     color: white !important;
@@ -43,18 +41,62 @@
 }
 
 .user-name {
-  max-width: 140px;
+  max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.main-content { min-height: calc(100vh - 64px - 80px); }
+// ── Hamburger (oculto en desktop) ──────────────────────────────────────────
+.hamburger-btn {
+  display: none !important;
+  color: white !important;
+}
+
+// ── Menú móvil desplegable ─────────────────────────────────────────────────
+.mobile-nav {
+  display: none;
+  flex-direction: column;
+  align-items: stretch;
+  background: var(--color-primary);
+  padding: 0.5rem 0 1rem;
+  border-top: 1px solid rgba(255,255,255,.1);
+
+  a, button {
+    color: rgba(255,255,255,.9) !important;
+    text-align: left;
+    padding: 0.75rem 1.25rem;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  mat-divider { border-color: rgba(255,255,255,.15); margin: 0.5rem 0; }
+}
+
+.mobile-user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  color: rgba(255,255,255,.6);
+  font-size: 0.85rem;
+  mat-icon { font-size: 1.2rem; height: 1.2rem; width: 1.2rem; }
+}
+
+.btn-register-mobile {
+  background: var(--color-accent) !important;
+  color: white !important;
+  border-radius: 8px;
+  margin: 0.5rem 1rem;
+}
+
+// ── Contenido y footer ─────────────────────────────────────────────────────
+.main-content { min-height: calc(100vh - 56px - 70px); }
 
 .site-footer {
   background: var(--color-primary);
   color: rgba(255,255,255,.7);
-  padding: 1.5rem;
+  padding: 1.25rem 1rem;
 }
 
 .footer-inner {
@@ -64,7 +106,7 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .footer-brand {
@@ -79,7 +121,7 @@
 
 .footer-links {
   display: flex;
-  gap: 1.25rem;
+  gap: 1rem;
   a {
     color: rgba(255,255,255,.7);
     text-decoration: none;
@@ -88,4 +130,15 @@
   }
 }
 
-// Expose currentYear from TS
+// ── RESPONSIVE ─────────────────────────────────────────────────────────────
+@media (max-width: 768px) {
+  .desktop-nav  { display: none !important; }
+  .hamburger-btn { display: inline-flex !important; }
+  .mobile-nav   { display: flex; }
+
+  .navbar-toolbar { padding: 0 0.75rem; }
+  .brand-name { font-size: 1rem; }
+
+  .footer-inner { flex-direction: column; text-align: center; }
+  .footer-links { justify-content: center; }
+}

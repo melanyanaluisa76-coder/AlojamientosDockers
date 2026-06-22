@@ -1,14 +1,15 @@
 <!-- ── Navbar ───────────────────────────────────────────────────────────── -->
 <header class="navbar-wrapper">
   <mat-toolbar class="navbar-toolbar">
-    <a routerLink="/" class="brand-link">
+    <a routerLink="/" class="brand-link" (click)="closeMobileMenu()">
       <mat-icon class="brand-icon">hotel</mat-icon>
       <span class="brand-name">HousingPlace</span>
     </a>
 
     <span class="spacer"></span>
 
-    <nav class="nav-links">
+    <!-- Nav desktop -->
+    <nav class="nav-links desktop-nav">
       <a mat-button routerLink="/propiedades">
         <mat-icon>search</mat-icon> Propiedades
       </a>
@@ -49,7 +50,49 @@
         </a>
       }
     </nav>
+
+    <!-- Hamburger mobile -->
+    <button mat-icon-button class="hamburger-btn" (click)="toggleMobileMenu()" aria-label="Menú">
+      <mat-icon>{{ mobileMenuOpen() ? 'close' : 'menu' }}</mat-icon>
+    </button>
   </mat-toolbar>
+
+  <!-- Menú móvil desplegable -->
+  @if (mobileMenuOpen()) {
+    <nav class="mobile-nav">
+      <a mat-button routerLink="/propiedades" (click)="closeMobileMenu()">
+        <mat-icon>search</mat-icon> Propiedades
+      </a>
+
+      @if (authStore.isAuthenticated()) {
+        <a mat-button routerLink="/mis-reservas" (click)="closeMobileMenu()">
+          <mat-icon>event_note</mat-icon> Mis Reservas
+        </a>
+
+        @if (authStore.hasAdminAccess()) {
+          <a mat-button routerLink="/admin" (click)="closeMobileMenu()">
+            <mat-icon>admin_panel_settings</mat-icon> Admin
+          </a>
+        }
+
+        <mat-divider />
+        <div class="mobile-user-info">
+          <mat-icon>account_circle</mat-icon>
+          <span>{{ authStore.user()?.nombreCompleto }}</span>
+        </div>
+        <button mat-button (click)="logout()">
+          <mat-icon>logout</mat-icon> Cerrar Sesión
+        </button>
+      } @else {
+        <a mat-button routerLink="/login" (click)="closeMobileMenu()">
+          <mat-icon>login</mat-icon> Iniciar Sesión
+        </a>
+        <a mat-flat-button routerLink="/register" class="btn-register-mobile" (click)="closeMobileMenu()">
+          Registrarse
+        </a>
+      }
+    </nav>
+  }
 </header>
 
 <!-- ── Contenido de la página ───────────────────────────────────────────── -->
@@ -65,7 +108,7 @@
       <span>HousingPlace</span>
     </div>
     <p class="footer-copy">
-      &copy; {{ currentYear }} HousingPlace · Sistema de Reservas de Alojamiento
+      &copy; {{ currentYear }} HousingPlace
     </p>
     <nav class="footer-links">
       <a routerLink="/propiedades">Propiedades</a>
