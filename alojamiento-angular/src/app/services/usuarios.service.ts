@@ -6,26 +6,31 @@ import { ApiResponse } from '../core/models/api-response.model';
 import { LoginRequest, LoginResponse, RegisterRequest, UsuarioAdmin, Rol } from '../core/models/auth.model';
 import { ColaboradorItem, CrearColaboradorRequest } from '../core/models/usuario.model';
 
-// Payload base64 para tokens demo: {"sub":"1"} y {"sub":"999"}
+// ── Ghost auth (fines académicos) ────────────────────────────────────────────
+// Cualquier credencial es aceptada. Si el email contiene "admin" se asigna
+// rol Administrador; en caso contrario rol Cliente.
 const DEMO_HEADER = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
-const GHOST_LOGINS: Record<string, LoginResponse> = {
-  'cliente@demo.com:Demo12345!': {
-    token: `${DEMO_HEADER}.eyJzdWIiOiIxIn0=.demo`,
-    clienteId: 1,
-    colaboradorId: null,
-    nombreCompleto: 'Cliente Demo',
-    email: 'cliente@demo.com',
-    roles: ['Cliente'],
-  },
-  'admin@demo.com:Admin12345!': {
-    token: `${DEMO_HEADER}.eyJzdWIiOiI5OTkifQ==.demo`,
-    clienteId: null,
-    colaboradorId: 1,
-    nombreCompleto: 'Administrador Demo',
-    email: 'admin@demo.com',
-    roles: ['Administrador'],
-  },
-};
+
+function buildGhostResponse(email: string): LoginResponse {
+  const isAdmin = email.toLowerCase().includes('admin');
+  return isAdmin
+    ? {
+        token: `${DEMO_HEADER}.eyJzdWIiOiI5OTkifQ==.ghost`,
+        clienteId: null,
+        colaboradorId: 1,
+        nombreCompleto: 'Administrador Demo',
+        email,
+        roles: ['Administrador'],
+      }
+    : {
+        token: `${DEMO_HEADER}.eyJzdWIiOiIxIn0=.ghost`,
+        clienteId: 1,
+        colaboradorId: null,
+        nombreCompleto: 'Cliente Demo',
+        email,
+        roles: ['Cliente'],
+      };
+}
 
 @Injectable({ providedIn: 'root' })
 export class UsuariosService {
@@ -34,11 +39,7 @@ export class UsuariosService {
 
   // ── Auth ─────────────────────────────────────────────────────────────────
   login(req: LoginRequest): Observable<ApiResponse<LoginResponse>> {
-    const ghost = GHOST_LOGINS[`${req.email}:${req.password}`];
-    if (ghost) {
-      return of({ data: ghost, success: true });
-    }
-    return this.http.post<ApiResponse<LoginResponse>>(`${this.base}/auth/login`, req);
+    return of({ data: buildGhostResponse(req.email), success: true });
   }
 
   register(req: RegisterRequest): Observable<ApiResponse<unknown>> {

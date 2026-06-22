@@ -52,6 +52,17 @@
     </mat-card-content>
 
     <mat-card-footer class="login-footer">
+      <div class="demo-section">
+        <span class="demo-label">Acceso rápido demo</span>
+        <div class="demo-buttons">
+          <button mat-stroked-button type="button" class="demo-btn demo-admin" (click)="loginDemo('admin')">
+            <mat-icon>admin_panel_settings</mat-icon> Admin
+          </button>
+          <button mat-stroked-button type="button" class="demo-btn demo-cliente" (click)="loginDemo('cliente')">
+            <mat-icon>person</mat-icon> Cliente
+          </button>
+        </div>
+      </div>
       <p>¿No tienes cuenta? <a routerLink="/register">Regístrate aquí</a></p>
     </mat-card-footer>
   </mat-card>

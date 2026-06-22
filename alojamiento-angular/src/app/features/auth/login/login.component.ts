@@ -40,6 +40,12 @@ export class LoginComponent {
 
   togglePassword(): void { this.showPassword.update(v => !v); }
 
+  loginDemo(tipo: 'admin' | 'cliente'): void {
+    const email = tipo === 'admin' ? 'admin@demo.com' : 'cliente@demo.com';
+    this.form.setValue({ email, password: 'Demo12345!' });
+    this.submit();
+  }
+
   submit(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.loading.set(true);
