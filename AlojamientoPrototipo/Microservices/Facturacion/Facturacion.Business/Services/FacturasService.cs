@@ -28,6 +28,12 @@ public class FacturasService : IFacturasService
         _publishEndpoint = publishEndpoint;
     }
 
+    public async Task<IEnumerable<FacturaResponse>> GetAllAsync()
+    {
+        var facturas = await _facturasDataService.GetAllAsync();
+        return facturas.Select(FacturacionBusinessMapper.ToResponse);
+    }
+
     public async Task<FacturaResponse> GetByIdAsync(int id)
     {
         var factura = await _facturasDataService.GetByIdAsync(id);

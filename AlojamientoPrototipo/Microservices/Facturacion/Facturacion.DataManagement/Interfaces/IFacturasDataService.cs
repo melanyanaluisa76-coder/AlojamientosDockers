@@ -4,6 +4,7 @@ namespace Facturacion.DataManagement.Interfaces;
 
 public interface IFacturasDataService
 {
+    Task<IEnumerable<FacturaDataModel>> GetAllAsync();
     Task<FacturaDataModel?> GetByIdAsync(int id);
     Task<IEnumerable<FacturaDataModel>> GetByReservaIdAsync(int reservaId);
     Task<FacturaDataModel> CreateAsync(FacturaDataModel model);

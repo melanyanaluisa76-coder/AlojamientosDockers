@@ -12,6 +12,12 @@ public class FacturasDataService : IFacturasDataService
 
     public FacturasDataService(IFacturasRepository repo) => _repo = repo;
 
+    public async Task<IEnumerable<FacturaDataModel>> GetAllAsync()
+    {
+        var entities = await _repo.GetAllAsync();
+        return entities.Select(FacturacionMapper.ToDataModel);
+    }
+
     public async Task<FacturaDataModel?> GetByIdAsync(int id)
     {
         var entity = await _repo.GetByIdAsync(id);

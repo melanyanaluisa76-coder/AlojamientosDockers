@@ -12,6 +12,10 @@ public class FacturasController : ControllerBase
 
     public FacturasController(IFacturasService service) => _service = service;
 
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+        => Ok(await _service.GetAllAsync());
+
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
         => Ok(await _service.GetByIdAsync(id));
