@@ -164,7 +164,9 @@
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Check-in</mat-label>
               <mat-icon matPrefix>event</mat-icon>
-              <input matInput type="date" formControlName="fechaCheckIn" [min]="today" />
+              <input matInput [matDatepicker]="pickerIn" formControlName="fechaCheckIn" [min]="today" placeholder="dd/mm/aaaa" readonly />
+              <mat-datepicker-toggle matIconSuffix [for]="pickerIn"></mat-datepicker-toggle>
+              <mat-datepicker #pickerIn></mat-datepicker>
               @if (bookingForm.get('fechaCheckIn')?.hasError('required') && bookingForm.get('fechaCheckIn')?.touched) {
                 <mat-error>La fecha de entrada es obligatoria.</mat-error>
               }
@@ -173,7 +175,9 @@
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Check-out</mat-label>
               <mat-icon matPrefix>event</mat-icon>
-              <input matInput type="date" formControlName="fechaCheckOut" [min]="bookingForm.get('fechaCheckIn')?.value || today" />
+              <input matInput [matDatepicker]="pickerOut" formControlName="fechaCheckOut" [min]="minCheckOut" placeholder="dd/mm/aaaa" readonly />
+              <mat-datepicker-toggle matIconSuffix [for]="pickerOut"></mat-datepicker-toggle>
+              <mat-datepicker #pickerOut></mat-datepicker>
               @if (bookingForm.get('fechaCheckOut')?.hasError('required') && bookingForm.get('fechaCheckOut')?.touched) {
                 <mat-error>La fecha de salida es obligatoria.</mat-error>
               }

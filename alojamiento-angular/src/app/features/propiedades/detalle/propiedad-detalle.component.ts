@@ -1,7 +1,7 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DecimalPipe, CurrencyPipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,6 +10,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { AlojamientosService } from '../../../services/alojamientos.service';
 import { ReservasService } from '../../../services/reservas.service';
 import { AuthStore } from '../../../core/store/auth.store';
@@ -26,6 +28,7 @@ import { FotosService } from '../../../services/fotos.service';
     RouterLink, ReactiveFormsModule, DecimalPipe, CurrencyPipe,
     MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule,
     MatCheckboxModule, MatDividerModule, MatTooltipModule,
+    MatDatepickerModule, MatNativeDateModule,
     LoadingSpinnerComponent,
   ],
   templateUrl: './propiedad-detalle.component.html',
@@ -51,8 +54,8 @@ export class PropiedadDetalleComponent implements OnInit {
   private readonly existingReservas = signal<ReservaResponse[]>([]);
 
   readonly bookingForm = this.fb.group({
-    fechaCheckIn:  ['', Validators.required],
-    fechaCheckOut: ['', Validators.required],
+    fechaCheckIn:  new FormControl<Date | null>(null, { validators: Validators.required }),
+    fechaCheckOut: new FormControl<Date | null>(null, { validators: Validators.required }),
     numAdultos:    [1, [Validators.required, Validators.min(1), Validators.max(20)]],
     numNinos:      [0, [Validators.min(0), Validators.max(20)]],
     llevaMascotas: [false],
@@ -65,8 +68,9 @@ export class PropiedadDetalleComponent implements OnInit {
   readonly nightCount = computed(() => {
     const v = this.formValues();
     if (!v.fechaCheckIn || !v.fechaCheckOut) return 0;
-    const diff = new Date(v.fechaCheckOut).getTime() - new Date(v.fechaCheckIn).getTime();
-    return Math.max(0, Math.ceil(diff / 86_400_000));
+    const inMs  = (v.fechaCheckIn  as unknown as Date).getTime?.() ?? new Date(v.fechaCheckIn  as unknown as string).getTime();
+    const outMs = (v.fechaCheckOut as unknown as Date).getTime?.() ?? new Date(v.fechaCheckOut as unknown as string).getTime();
+    return Math.max(0, Math.ceil((outMs - inMs) / 86_400_000));
   });
 
   readonly subtotal = computed(() => {
@@ -154,8 +158,8 @@ export class PropiedadDetalleComponent implements OnInit {
     }
 
     // Validación de conflicto de fechas
-    const checkIn     = new Date(raw.fechaCheckIn!);
-    const checkOut    = new Date(raw.fechaCheckOut!);
+    const checkIn     = raw.fechaCheckIn  instanceof Date ? raw.fechaCheckIn  : new Date(raw.fechaCheckIn  as unknown as string);
+    const checkOut    = raw.fechaCheckOut instanceof Date ? raw.fechaCheckOut : new Date(raw.fechaCheckOut as unknown as string);
     const selectedIds = Array.from(this.selectedRooms());
     const activeStates = ['Pendiente', 'Confirmada', 'Activa', 'Completada'];
 
@@ -189,8 +193,8 @@ export class PropiedadDetalleComponent implements OnInit {
       clienteId,
       alojamientoId: this.propiedad()!.alojamientoId,
       habitaciones,
-      fechaCheckIn:  raw.fechaCheckIn!,
-      fechaCheckOut: raw.fechaCheckOut!,
+      fechaCheckIn:  this.formatDateStr(raw.fechaCheckIn),
+      fechaCheckOut: this.formatDateStr(raw.fechaCheckOut),
       numAdultos:    raw.numAdultos!,
       numNinos:      raw.numNinos ?? 0,
       llevaMascotas: raw.llevaMascotas ?? false,
@@ -201,8 +205,8 @@ export class PropiedadDetalleComponent implements OnInit {
         const storedSlots: BookedSlot[] = JSON.parse(localStorage.getItem('booked_slots') || '[]');
         selectedIds.forEach(id => storedSlots.push({
           habitacionId: id,
-          checkIn: raw.fechaCheckIn!,
-          checkOut: raw.fechaCheckOut!,
+          checkIn:  this.formatDateStr(raw.fechaCheckIn),
+          checkOut: this.formatDateStr(raw.fechaCheckOut),
         }));
         localStorage.setItem('booked_slots', JSON.stringify(storedSlots));
 
@@ -222,5 +226,18 @@ export class PropiedadDetalleComponent implements OnInit {
   }
 
   stars(n: number): number[] { return Array.from({ length: 5 }, (_, i) => i); }
-  get today(): string { return new Date().toISOString().split('T')[0]; }
+  get today(): Date { return new Date(); }
+  get minCheckOut(): Date {
+    const v = this.bookingForm.get('fechaCheckIn')?.value as Date | null;
+    const base = v instanceof Date ? new Date(v) : new Date();
+    base.setDate(base.getDate() + 1);
+    return base;
+  }
+  private formatDateStr(v: Date | null | undefined): string {
+    if (!v) return '';
+    const y = v.getFullYear();
+    const m = String(v.getMonth() + 1).padStart(2, '0');
+    const d = String(v.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
 }
